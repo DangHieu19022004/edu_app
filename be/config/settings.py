@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "core",
+    # swagger
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
