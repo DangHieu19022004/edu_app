@@ -48,6 +48,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     # Local apps
+    "apps.users",
+    "apps.classroom",
+    "apps.contact",
+    "apps.ocr",
+    "apps.chatbot",
     "core",
     # swagger
     'drf_yasg',
