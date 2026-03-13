@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import mongoengine
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -93,6 +94,34 @@ DATABASES = {
     }
 }
 
+MONGODB_DATABASES = {
+    'default': {
+        'name': os.getenv('MONGODB_NAME', 'edu_app'),
+        'host': os.getenv('MONGODB_HOST', 'localhost'),
+        'port': int(os.getenv('MONGODB_PORT', 27017)),
+        'username': os.getenv('MONGODB_USERNAME', ''),
+        'password': os.getenv('MONGODB_PASSWORD', ''),
+        'authentication_source': os.getenv('MONGODB_AUTH_SOURCE', 'admin'),
+    }
+}
+
+# Kết nối MongoDB với MongoEngine
+mongo_connect_kwargs = {
+    'db': MONGODB_DATABASES['default']['name'],
+    'host': MONGODB_DATABASES['default']['host'],
+    'port': MONGODB_DATABASES['default']['port'],
+}
+
+if MONGODB_DATABASES['default']['username'] and MONGODB_DATABASES['default']['password']:
+    mongo_connect_kwargs.update(
+        {
+            'username': MONGODB_DATABASES['default']['username'],
+            'password': MONGODB_DATABASES['default']['password'],
+            'authentication_source': MONGODB_DATABASES['default']['authentication_source'],
+        }
+    )
+
+mongoengine.connect(**mongo_connect_kwargs)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
