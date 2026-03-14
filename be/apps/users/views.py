@@ -5,12 +5,13 @@ from datetime import datetime, timedelta
 
 import jwt
 from django.core.cache import cache
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from firebase_admin import auth
 
+from apps.users.firebase_auth import verify_id_token as verify_firebase_id_token
 from apps.users.models import User
 from config import settings
 
@@ -32,6 +33,29 @@ def _upsert_user_by_uid(uid, defaults):
 
     user.save()
     return user, created
+
+
+def _hash_password(raw_password):
+    return make_password(raw_password)
+
+
+def _verify_and_upgrade_password(user, raw_password):
+    stored_password = user.password_hash or ""
+
+    if not stored_password:
+        return False
+
+    if check_password(raw_password, stored_password):
+        return True
+
+    # Backward compatibility: accept legacy plain-text passwords once,
+    # then upgrade to hashed value.
+    if stored_password == raw_password:
+        user.password_hash = _hash_password(raw_password)
+        user.save()
+        return True
+
+    return False
 
 @csrf_exempt
 def forgot_password_send_otp(request):
@@ -83,7 +107,7 @@ def forgot_password_reset(request):
             except User.DoesNotExist:
                 return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
 
-            user.password_hash = new_password
+            user.password_hash = _hash_password(new_password)
             user.save()
             cache.delete(f"otp_reset:{phone}")
 
@@ -124,11 +148,11 @@ def change_password(request):
                 return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
 
             # Kiểm tra mật khẩu cũ
-            if user.password_hash != old_password:
+            if not _verify_and_upgrade_password(user, old_password):
                 return JsonResponse({"error": "Mật khẩu cũ không đúng"}, status=401)
 
             # Cập nhật mật khẩu mới
-            user.password_hash = new_password
+            user.password_hash = _hash_password(new_password)
             user.save()
 
             return JsonResponse({"message": "Đổi mật khẩu thành công"})
@@ -201,7 +225,7 @@ def verify_otp(request):
                     full_name=full_name,
                     email=email,
                     phone=phone,
-                    password_hash=password,
+                    password_hash=_hash_password(password),
                     avatar="",
                     fingerprint="",
                     created_at=current_timestamp,
@@ -295,7 +319,7 @@ def google_login(request):
             firebase_id_token = data.get("token")
 
             # Xác thực token với Firebase
-            decoded_token = auth.verify_id_token(firebase_id_token)
+            decoded_token = verify_firebase_id_token(firebase_id_token)
             uid = decoded_token["uid"]
             email = decoded_token.get("email")
             full_name = decoded_token.get("name")
@@ -368,7 +392,7 @@ def form_register(request):
                 full_name=full_name,
                 email=email,
                 phone=phone,
-                password_hash=password,  # lưu plain text tạm thời (nên hash bằng bcrypt sau này)
+                password_hash=_hash_password(password),
                 avatar="",
                 fingerprint="",
                 created_at=current_timestamp,
@@ -420,7 +444,7 @@ def form_login(request):
                     return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
 
             # So sánh password (giả định đang lưu plain text hoặc hash đã biết)
-            if user.password_hash != password:
+            if not _verify_and_upgrade_password(user, password):
                 return JsonResponse({"error": "Sai mật khẩu"}, status=401)
 
             # Tạo JWT token
@@ -455,7 +479,7 @@ def verify_token(request):
             if not request.body:
                 return JsonResponse({"error": "Empty request body"}, status=400)
 
-            auth_header = request.headers.get("Authorization")
+            auth_header = request.headers.get("Authorization", "")
 
             if auth_header.startswith("Bearer "):
                 token = auth_header.split(" ")[1]

@@ -8,7 +8,10 @@ from firebase_admin import auth, credentials
 def _get_credentials_path() -> Path:
     env_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
     if env_path:
-        return Path(env_path)
+        candidate = Path(env_path).expanduser()
+        if not candidate.is_absolute():
+            candidate = Path(__file__).resolve().parents[2] / candidate
+        return candidate
 
     return Path(__file__).resolve().parents[2] / "config" / "eduteacher-19063-firebase-adminsdk-fbsvc-4a469228b4.json"
 
