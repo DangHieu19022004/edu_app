@@ -18,6 +18,10 @@ DIFY_API_KEY = 'app-cZec7tLlLvJDyYmnK0HgaQpf'
 
 import time
 
+
+def health_check(request):
+    return JsonResponse({"module": "chatbot", "status": "ok"})
+
 def clean_temp_files(folder_path=TEMP_DIR, expire_seconds= 24 * 60 * 60):
     """
     Xóa các file trong thư mục temp_files cũ hơn expire_seconds (mặc định: 1 ngày).
