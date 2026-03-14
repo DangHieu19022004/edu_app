@@ -21,9 +21,14 @@ from apps.classroom.models import Class
 import base64
 import os, time
 
-yolo_model = YOLO("ocr/runs/detect/train10/weights/best.pt")
-yolo_infor = YOLO("ocr/runs/detect/train5/weights/best.pt")
-ocr_model = PaddleOCR(use_gpu=False, lang='vi')
+OCR_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+YOLO_REPORT_CARD_WEIGHTS = os.path.join(OCR_APP_DIR, "runs", "detect", "train10", "weights", "best.pt")
+YOLO_INFO_WEIGHTS = os.path.join(OCR_APP_DIR, "runs", "detect", "train5", "weights", "best.pt")
+
+yolo_model = YOLO(YOLO_REPORT_CARD_WEIGHTS)
+yolo_infor = YOLO(YOLO_INFO_WEIGHTS)
+OCR_DEVICE = os.getenv("OCR_DEVICE", "cpu")
+ocr_model = PaddleOCR(lang='vi', device=OCR_DEVICE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)

@@ -111,13 +111,20 @@ MONGODB_DATABASES = {
 }
 
 # Kết nối MongoDB với MongoEngine
-mongo_connect_kwargs = {
-    'db': MONGODB_DATABASES['default']['name'],
-    'host': MONGODB_DATABASES['default']['host'],
-    'port': MONGODB_DATABASES['default']['port'],
-}
+mongodb_uri = os.getenv('MONGODB_URI', '').strip()
 
-if MONGODB_DATABASES['default']['username'] and MONGODB_DATABASES['default']['password']:
+if mongodb_uri:
+    mongo_connect_kwargs = {
+        'host': mongodb_uri,
+    }
+else:
+    mongo_connect_kwargs = {
+        'db': MONGODB_DATABASES['default']['name'],
+        'host': MONGODB_DATABASES['default']['host'],
+        'port': MONGODB_DATABASES['default']['port'],
+    }
+
+if not mongodb_uri and MONGODB_DATABASES['default']['username'] and MONGODB_DATABASES['default']['password']:
     mongo_connect_kwargs.update(
         {
             'username': MONGODB_DATABASES['default']['username'],
