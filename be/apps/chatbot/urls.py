@@ -1,7 +1,9 @@
-from django.urls import path
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 
-from . import views
+from .views import ask_chatbot
 
 urlpatterns = [
-    path("health/", views.health_check, name="chatbot-health"),
+    path('ask_chatbot/', ask_chatbot, name='ask_chatbot'),
 ]

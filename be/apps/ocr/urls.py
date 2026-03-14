@@ -1,7 +1,15 @@
-from django.urls import path
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 
-from . import views
+from .views import detect, save_full_report_card, get_full_report_card, update_report_card, delete_full_report_card, get_all_student_data
 
 urlpatterns = [
-    path("health/", views.health_check, name="ocr-health"),
+    path('detect/', detect, name='detect'),
+    path('save_full_report_card/', save_full_report_card, name='save_full_report_card'),
+    path('get_full_report_card/', get_full_report_card, name='get_full_report_card'),
+    path('update_report_card/', update_report_card, name='update_report_card'),
+    path('delete_full_report_card/', delete_full_report_card, name='delete_full_report_card'),
+    path('get_all_student_data/', get_all_student_data, name='get_all_student_data')
 ]
+
