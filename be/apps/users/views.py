@@ -7,7 +7,10 @@ import jwt
 from django.core.cache import cache
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
-from rest_framework.decorators import api_view
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.users.firebase_auth import verify_id_token as verify_firebase_id_token
@@ -18,6 +21,92 @@ from config import settings
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 SECRET_KEY = settings.SECRET_KEY
+
+FORGOT_PASSWORD_SEND_OTP_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["phone"],
+    properties={
+        "phone": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+FORGOT_PASSWORD_RESET_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["phone", "otp", "new_password"],
+    properties={
+        "phone": openapi.Schema(type=openapi.TYPE_STRING),
+        "otp": openapi.Schema(type=openapi.TYPE_STRING),
+        "new_password": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+CHANGE_PASSWORD_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["old_password", "new_password"],
+    properties={
+        "old_password": openapi.Schema(type=openapi.TYPE_STRING),
+        "new_password": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+SEND_OTP_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["email"],
+    properties={
+        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+    },
+)
+
+VERIFY_OTP_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["email", "otp", "phone", "password"],
+    properties={
+        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+        "otp": openapi.Schema(type=openapi.TYPE_STRING),
+        "phone": openapi.Schema(type=openapi.TYPE_STRING),
+        "password": openapi.Schema(type=openapi.TYPE_STRING),
+        "full_name": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+FACEBOOK_LOGIN_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["uid", "displayName", "photoURL"],
+    properties={
+        "uid": openapi.Schema(type=openapi.TYPE_STRING),
+        "displayName": openapi.Schema(type=openapi.TYPE_STRING),
+        "photoURL": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+GOOGLE_LOGIN_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["token"],
+    properties={
+        "token": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+FORM_REGISTER_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["full_name", "email", "phone", "password"],
+    properties={
+        "full_name": openapi.Schema(type=openapi.TYPE_STRING),
+        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+        "phone": openapi.Schema(type=openapi.TYPE_STRING),
+        "password": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
+FORM_LOGIN_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["email_or_phone", "password"],
+    properties={
+        "email_or_phone": openapi.Schema(type=openapi.TYPE_STRING),
+        "id": openapi.Schema(type=openapi.TYPE_STRING, description="Deprecated: use email_or_phone"),
+        "password": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
 
 
 def _upsert_user_by_uid(uid, defaults):
@@ -56,7 +145,9 @@ def _verify_and_upgrade_password(user, raw_password):
 
     return False
 
+@swagger_auto_schema(method='post', request_body=FORGOT_PASSWORD_SEND_OTP_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def forgot_password_send_otp(request):
     try:
         data = request.data
@@ -83,7 +174,9 @@ def forgot_password_send_otp(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=FORGOT_PASSWORD_RESET_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def forgot_password_reset(request):
     try:
         data = request.data
@@ -112,7 +205,9 @@ def forgot_password_reset(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=CHANGE_PASSWORD_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def change_password(request):
     try:
         auth_header = request.headers.get("Authorization", "")
@@ -153,7 +248,9 @@ def change_password(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=SEND_OTP_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def send_otp(request):
     try:
         email = request.data.get("email")
@@ -180,7 +277,9 @@ def send_otp(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=VERIFY_OTP_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def verify_otp(request):
     try:
         data = request.data
@@ -198,9 +297,9 @@ def verify_otp(request):
         if cached_otp and cached_otp == otp:
             cache.delete(f"otp:{email}")  # Xóa OTP sau khi dùng
 
-            if User.objects.filter(email=email).exists():
+            if User.objects.filter(email=email).first() is not None:
                 return Response({"error": "Email đã tồn tại"}, status=409)
-            if User.objects.filter(phone=phone).exists():
+            if User.objects.filter(phone=phone).first() is not None:
                 return Response({"error": "Số điện thoại đã tồn tại"}, status=409)
 
             uid = f"user_{int(datetime.utcnow().timestamp())}"
@@ -242,7 +341,9 @@ def verify_otp(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=FACEBOOK_LOGIN_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def facebook_login(request):
     try:
         data = request.data
@@ -292,7 +393,9 @@ def facebook_login(request):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
+@swagger_auto_schema(method='post', request_body=GOOGLE_LOGIN_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def google_login(request):
     try:
         data = request.data
@@ -343,7 +446,9 @@ def google_login(request):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
+@swagger_auto_schema(method='post', request_body=FORM_REGISTER_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def form_register(request):
     try:
         data = request.data
@@ -355,9 +460,9 @@ def form_register(request):
         if not email or not phone or not password:
             return Response({"error": "Thiếu thông tin đăng ký"}, status=400)
 
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=email).first() is not None:
             return Response({"error": "Email đã được sử dụng"}, status=409)
-        if User.objects.filter(phone=phone).exists():
+        if User.objects.filter(phone=phone).first() is not None:
             return Response({"error": "Số điện thoại đã được sử dụng"}, status=409)
 
         uid = f"user_{int(datetime.utcnow().timestamp())}"
@@ -398,11 +503,13 @@ def form_register(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+@swagger_auto_schema(method='post', request_body=FORM_LOGIN_BODY)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def form_login(request):
     try:
         data = request.data
-        email_or_phone = data.get("id")
+        email_or_phone = data.get("email_or_phone") or data.get("id")
         password = data.get("password")
 
         if not email_or_phone or not password:
@@ -445,6 +552,7 @@ def form_login(request):
         return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def verify_token(request):
     try:
         auth_header = request.headers.get("Authorization", "")
