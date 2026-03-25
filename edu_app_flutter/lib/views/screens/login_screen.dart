@@ -3,6 +3,7 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/screens/signin_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -244,7 +245,11 @@ class _LoginCardState extends State<_LoginCard> {
           _PrimaryButton(
             label: AppTexts.loginButton,
             icon: AppIcons.login,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.lg),
           const _DividerLabel(label: AppTexts.orUpper),
