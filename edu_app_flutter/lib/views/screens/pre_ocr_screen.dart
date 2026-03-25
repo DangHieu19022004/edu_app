@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/ocr_screen.dart';
+import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -67,9 +69,11 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
 
   void _confirmSelection() {
     if (_selectedImages.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã chọn ${_selectedImages.length} ảnh. Sẵn sàng OCR.'),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OcrScreen(
+          imagePaths: _selectedImages.map((image) => image.path).toList(),
+        ),
       ),
     );
   }
@@ -81,14 +85,10 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _buildBackButton(),
-              ),
+            OcrFlowHeader(
+              title: AppTexts.preOcrTitle,
+              onBack: () => Navigator.of(context).pop(),
             ),
-            _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
@@ -161,53 +161,6 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBackButton() {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: () => Navigator.of(context).pop(),
-        child: const SizedBox(
-          width: 38,
-          height: 38,
-          child: Icon(Icons.arrow_back, color: AppColors.title),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [AppColors.heroPrimary, Color(0xFF2458F3)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(
-            child: Text(
-              AppTexts.preOcrTitle,
-              style: TextStyle(
-                fontSize: AppFontSizes.dashboardTitle,
-                fontWeight: FontWeight.w700,
-                color: AppColors.white,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

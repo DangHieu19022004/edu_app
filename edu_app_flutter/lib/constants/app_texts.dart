@@ -69,4 +69,17 @@ class AppTexts {
   static const String preOcrEmptyHint =
       'Chưa có ảnh nào. Hãy chọn ảnh hoặc chụp ảnh để tiếp tục.';
   static const String preOcrConfirm = 'Xác nhận';
+
+  // ------------------------------
+  // OCR Screen
+  // ------------------------------
+  static const String ocrPreviewTitle = 'Bản xem trước học bạ';
+  static const String ocrPreviewHint =
+      'Vui lòng đảm bảo hình ảnh rõ nét để nhận diện chính xác nhất';
+  static const String ocrProgressLabel = 'Đang trích xuất dữ liệu (OCR)...';
+  static const String ocrResultTitle = 'Kết quả trích xuất';
+  static const String ocrStudentName = 'Họ và tên học sinh';
+  static const String ocrClass = 'Lớp';
+  static const String ocrSemester = 'Học kỳ';
+  static const String ocrAverageScore = 'Điểm trung bình môn';
 }
