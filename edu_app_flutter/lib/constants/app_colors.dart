@@ -34,4 +34,13 @@ class AppColors {
   static const Color buttonShadow = Color(0x3D2449E9);
   static const Color divider = Color(0xFFD5DEEA);
   static const Color googleRed = Color(0xFFDB4437);
+
+  // ------------------------------
+  // Dashboard
+  // ------------------------------
+  static const Color heroPrimary = Color(0xFF1337EC);
+  static const Color heroSecondary = Color(0xFF8B5CF6);
+  static const Color chipGlass = Color(0xB2FFFFFF);
+  static const Color timelineLine = Color(0xFFE8EDF6);
+  static const Color cardBorder = Color(0xFFF1F4FA);
 }

@@ -25,6 +25,15 @@ class AppFontSizes {
   static const double signInLabel = 13;
   static const double signInButton = 17;
   // ------------------------------
+  // Dashboard Screen
+  // ------------------------------
+  static const double dashboardGreeting = 21;
+  static const double dashboardTitle = 18;
+  static const double dashboardBody = 14;
+  static const double dashboardCaption = 12;
+  static const double dashboardTiny = 11;
+  static const double dashboardChip = 13;
+  // ------------------------------
   // Icon Sizes
   // ------------------------------
   static const double icon20 = 20;
@@ -58,4 +67,16 @@ class AppIcons {
   static const IconData visibilityOutlined = Icons.visibility_outlined;
   static const IconData visibilityOffOutlined = Icons.visibility_off_outlined;
   static const IconData login = Icons.login;
+
+  // ------------------------------
+  // Dashboard / Navigation
+  // ------------------------------
+  static const IconData notifications = Icons.notifications_none_rounded;
+  static const IconData search = Icons.search;
+  static const IconData tune = Icons.tune_rounded;
+  static const IconData home = Icons.home_rounded;
+  static const IconData scan = Icons.document_scanner_rounded;
+  static const IconData find = Icons.manage_search_rounded;
+  static const IconData chatbot = Icons.smart_toy_rounded;
+  static const IconData profile = Icons.account_circle_rounded;
 }

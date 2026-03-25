@@ -48,4 +48,14 @@ class AppTexts {
   static const String terms = 'Điều khoản';
   static const String privacy = 'Chính sách bảo mật';
   static const String support = 'Trợ giúp';
+
+  // ------------------------------
+  // Dashboard Screen
+  // ------------------------------
+  static const String dashboardGreeting = 'Chào cô Lan';
+  static const String dashboardSubGreeting = 'Hôm nay bạn muốn làm gì?';
+  static const String dashboardSearchHint = 'Tìm kiếm học bạ, học sinh...';
+  static const String dashboardMainFeatures = 'Tính năng chính';
+  static const String dashboardRecentActivity = 'Hoạt động gần đây';
+  static const String viewAll = 'Xem tất cả';
 }
