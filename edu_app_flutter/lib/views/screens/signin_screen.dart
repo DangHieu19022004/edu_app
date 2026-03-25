@@ -51,12 +51,12 @@ class _SigninScreenState extends State<SigninScreen> {
                         borderRadius: BorderRadius.circular(999),
                         onTap: () => Navigator.of(context).pop(),
                         child: const SizedBox(
-                          width: 38,
-                          height: 38,
+                          width: AppFontSizes.icon38,
+                          height: AppFontSizes.icon38,
                           child: Icon(
                             AppIcons.arrowBack,
                             color: AppColors.primary,
-                            size: 20,
+                            size: AppFontSizes.icon20,
                           ),
                         ),
                       ),
@@ -255,22 +255,33 @@ class _SigninScreenState extends State<SigninScreen> {
 
 class _SigninHero extends StatelessWidget {
   const _SigninHero();
-
+  static const String _illustrationAsset = 'lib/assets/logo1.png';
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
-        SizedBox(
-          width: 86,
-          height: 86,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Color(0x1A1337EC),
-              shape: BoxShape.circle,
+        Align(
+            child: Container(
+              width: 118,
+              height: 118,
+              child: Image.asset(
+                _illustrationAsset,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const DecoratedBox(
+                  decoration: BoxDecoration(color: Color(0x00000000)),
+                  child: Center(
+                    child: Icon(
+                      AppIcons.schoolOutlined,
+                      size: 56,
+                      color: Color.fromARGB(255, 255, 255, 255),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            child: Icon(AppIcons.school, color: AppColors.primary, size: 44),
           ),
-        ),
         SizedBox(height: 10),
         Text(
           AppTexts.signInTitle,

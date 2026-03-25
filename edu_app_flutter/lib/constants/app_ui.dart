@@ -24,6 +24,12 @@ class AppFontSizes {
   static const double signInDescription = 14;
   static const double signInLabel = 13;
   static const double signInButton = 17;
+  // ------------------------------
+  // Icon Sizes
+  // ------------------------------
+  static const double icon20 = 20;
+  static const double icon24 = 24;
+  static const double icon38 = 38;
 }
 
 class AppIcons {
