@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:edu_app_flutter/constants/app_colors.dart';
+import 'package:edu_app_flutter/constants/app_spacing.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
+import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/signin_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -6,18 +11,23 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
               const Padding(
-                padding: EdgeInsets.only(top: 12),
+                padding: EdgeInsets.only(top: AppSpacing.cardTop),
                 child: _LoginCard(),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSpacing.xs),
               const Padding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  0,
+                  AppSpacing.xl,
+                  AppSpacing.footerBottom,
+                ),
                 child: _FooterLinks(),
               ),
             ],
@@ -39,7 +49,7 @@ class _TopIllustration extends StatelessWidget {
       height: 120,
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFFFFFFFF),
+        color: AppColors.white,
       ),
       child: Stack(
         children: [
@@ -56,7 +66,7 @@ class _TopIllustration extends StatelessWidget {
                   decoration: BoxDecoration(color: Color(0x00000000)),
                   child: Center(
                     child: Icon(
-                      Icons.school_outlined,
+                      AppIcons.schoolOutlined,
                       size: 56,
                       color: Color.fromARGB(255, 255, 255, 255),
                     ),
@@ -95,14 +105,22 @@ class _LoginCardState extends State<_LoginCard> {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 26),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.cardHorizontal,
+        vertical: AppSpacing.cardVertical,
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxl,
+        AppSpacing.xxl,
+        AppSpacing.xxl,
+        26,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A20387A),
+            color: AppColors.cardShadow,
             blurRadius: 32,
             offset: Offset(0, 16),
           ),
@@ -114,55 +132,55 @@ class _LoginCardState extends State<_LoginCard> {
           const _TopIllustration(),
           const Center(
             child: Text(
-              'Đăng nhập',
+              AppTexts.loginTitle,
               style: TextStyle(
-                fontSize: 34,
+                fontSize: AppFontSizes.titleLarge,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0F1D44),
+                color: AppColors.title,
                 height: 1,
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           const Text(
-            'Chào mừng bạn trở lại với EduTeacher',
+            AppTexts.loginWelcome,
             style: TextStyle(
-              fontSize: 15,
-              color: Color(0xFF687A98),
+              fontSize: AppFontSizes.subtitle,
+              color: AppColors.subtitle,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           const Text(
-            'Email',
+            AppTexts.emailLabel,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: AppFontSizes.inputLabel,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1B2E52),
+              color: AppColors.label,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: AppSpacing.sm),
           _InputField(
             controller: _emailController,
-            icon: Icons.mail_rounded,
-            hintText: 'example@email.com',
+            icon: AppIcons.mail,
+            hintText: AppTexts.emailHint,
             keyboardType: TextInputType.emailAddress,
-            fontSize: 14,
+            fontSize: AppFontSizes.inputHint,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           const Text(
-            'Mật khẩu',
+            AppTexts.passwordLabel,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: AppFontSizes.inputLabel,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1B2E52),
+              color: AppColors.label,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: AppSpacing.sm),
           _InputField(
             controller: _passwordController,
-            icon: Icons.lock,
-            hintText: '••••••••',
+            icon: AppIcons.lock,
+            hintText: AppTexts.passwordHint,
             obscureText: _obscurePassword,
             suffix: IconButton(
               onPressed: () {
@@ -171,12 +189,14 @@ class _LoginCardState extends State<_LoginCard> {
                 });
               },
               icon: Icon(
-                _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                color: const Color(0xFF9AA8BE),
+                _obscurePassword
+                    ? AppIcons.visibility
+                    : AppIcons.visibilityOff,
+                color: AppColors.inputIcon,
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Transform.scale(
@@ -194,15 +214,15 @@ class _LoginCardState extends State<_LoginCard> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   side: const BorderSide(color: Color(0xFFCAD6E7), width: 1.6),
-                  activeColor: const Color(0xFF1337EC),
+                  activeColor: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: AppSpacing.xs),
               const Text(
-                'Ghi nhớ đăng nhập',
+                AppTexts.rememberMe,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF2D4266),
+                  fontSize: AppFontSizes.footer,
+                  color: AppColors.label,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -210,25 +230,25 @@ class _LoginCardState extends State<_LoginCard> {
               TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF1132E4),
+                  foregroundColor: AppColors.link,
                   textStyle: const TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSizes.footer,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text('Quên mật khẩu?'),
+                child: const Text(AppTexts.forgotPassword),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           _PrimaryButton(
-            label: 'Đăng nhập',
-            icon: Icons.login,
+            label: AppTexts.loginButton,
+            icon: AppIcons.login,
             onPressed: () {},
           ),
-          const SizedBox(height: 16),
-          const _DividerLabel(label: 'HOẶC'),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
+          const _DividerLabel(label: AppTexts.orUpper),
+          const SizedBox(height: AppSpacing.lg),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(58),
@@ -248,30 +268,42 @@ class _LoginCardState extends State<_LoginCard> {
               children: [
                 Text('G', style: TextStyle(fontSize: 30, color: Color(0xFFDB4437))),
                 SizedBox(width: 12),
-                Text('Tiếp tục với Google'),
+                Text(AppTexts.continueWithGoogle),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Center(
-            child: RichText(
-              text: const TextSpan(
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF677B9C),
-                  fontWeight: FontWeight.w500,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  AppTexts.noAccount,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.body,
+                    color: AppColors.body,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                children: [
-                  TextSpan(text: 'Chưa có tài khoản?  '),
-                  TextSpan(
-                    text: 'Đăng ký ngay',
-                    style: TextStyle(
-                      color: Color(0xFF1132E4),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SigninScreen()),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.link,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(
+                      fontSize: AppFontSizes.body,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
-              ),
+                  child: const Text(AppTexts.signUpNow),
+                ),
+              ],
             ),
           ),
         ],
@@ -288,7 +320,7 @@ class _InputField extends StatelessWidget {
     this.obscureText = false,
     this.suffix,
     this.keyboardType,
-    this.fontSize = 14,
+    this.fontSize = AppFontSizes.inputHint,
   });
 
   final TextEditingController controller;
@@ -307,23 +339,24 @@ class _InputField extends StatelessWidget {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         filled: true,
-        fillColor: const Color(0xFFF5F8FC),
-        prefixIcon: Icon(icon, color: const Color(0xFF94A4BC)),
+        fillColor: AppColors.inputFill,
+        prefixIcon: Icon(icon, color: AppColors.inputIcon),
         suffixIcon: suffix,
         hintText: hintText,
         hintStyle: TextStyle(
-          color: Color(0xFF93A2B8),
+          color: AppColors.inputHint,
           fontSize: fontSize,
           fontWeight: FontWeight.w500,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: const BorderSide(color: Color(0xFFD5DFEB), width: 1.2),
+          borderSide: const BorderSide(color: AppColors.inputBorder, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: const BorderSide(color: Color(0xFF1337EC), width: 1.6),
+          borderSide:
+              const BorderSide(color: AppColors.inputBorderFocus, width: 1.6),
         ),
       ),
     );
@@ -351,7 +384,7 @@ class _PrimaryButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x3D2449E9),
+            color: AppColors.buttonShadow,
             blurRadius: 18,
             offset: Offset(0, 9),
           ),
@@ -390,22 +423,22 @@ class _DividerLabel extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Divider(color: Color(0xFFD5DEEA), thickness: 1.2),
+          child: Divider(color: AppColors.divider, thickness: 1.2),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             label,
             style: const TextStyle(
-              color: Color(0xFF9AA7BC),
-              fontSize: 15,
+              color: AppColors.footer,
+              fontSize: AppFontSizes.divider,
               fontWeight: FontWeight.w700,
               letterSpacing: 1,
             ),
           ),
         ),
         const Expanded(
-          child: Divider(color: Color(0xFFD5DEEA), thickness: 1.2),
+          child: Divider(color: AppColors.divider, thickness: 1.2),
         ),
       ],
     );
@@ -421,26 +454,26 @@ class _FooterLinks extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Text(
-          'Điều khoản',
+          AppTexts.terms,
           style: TextStyle(
-            color: Color(0xFF98A6BC),
-            fontSize: 13,
+            color: AppColors.footer,
+            fontSize: AppFontSizes.footer,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
-          'Chính sách bảo mật',
+          AppTexts.privacy,
           style: TextStyle(
-            color: Color(0xFF98A6BC),
-            fontSize: 13,
+            color: AppColors.footer,
+            fontSize: AppFontSizes.footer,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
-          'Trợ giúp',
+          AppTexts.support,
           style: TextStyle(
-            color: Color(0xFF98A6BC),
-            fontSize: 13,
+            color: AppColors.footer,
+            fontSize: AppFontSizes.footer,
             fontWeight: FontWeight.w500,
           ),
         ),
