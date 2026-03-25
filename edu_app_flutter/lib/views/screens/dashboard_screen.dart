@@ -6,6 +6,7 @@ import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_activity_item.
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_feature_card.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_quick_action_chip.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_section_header.dart';
+import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: (index) => setState(() => _bottomIndex = index),
                 centerLabel: 'Quét',
                 centerIcon: AppIcons.scan,
-                onCenterTap: () {},
+                onCenterTap: _openPreOcr,
                 items: const [
                   BottomNavItemData(icon: AppIcons.home, label: 'Trang chủ'),
                   BottomNavItemData(icon: AppIcons.find, label: 'Tra cứu'),
@@ -91,6 +92,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   //   );
   // }
 
+  void _openPreOcr() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PreOcrScreen()),
+    );
+  }
+
   Widget _buildFeaturesSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
@@ -109,38 +116,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
             childAspectRatio: 0.96,
-            children: const [
+            children: [
               DashboardFeatureCard(
                 icon: Icons.document_scanner_rounded,
                 title: 'Quét học bạ',
                 subtitle: 'Số hóa nhanh',
                 accent: AppColors.primary,
+                onTap: _openPreOcr,
               ),
-              DashboardFeatureCard(
+              const DashboardFeatureCard(
                 icon: Icons.manage_search_rounded,
                 title: 'Tra cứu học bạ',
                 subtitle: 'Tìm kiếm tức thì',
                 accent: Color(0xFF8B5CF6),
               ),
-              DashboardFeatureCard(
+              const DashboardFeatureCard(
                 icon: Icons.smart_toy_rounded,
                 title: 'Chatbot hỗ trợ',
                 subtitle: 'Trợ lý ảo AI',
                 accent: Color(0xFF06B6D4),
               ),
-              DashboardFeatureCard(
+              const DashboardFeatureCard(
                 icon: Icons.forum_rounded,
                 title: 'Chatbot tư vấn',
                 subtitle: 'Hỗ trợ phụ huynh',
                 accent: Color(0xFF7C3AED),
               ),
-              DashboardFeatureCard(
+              const DashboardFeatureCard(
                 icon: Icons.bar_chart_rounded,
                 title: 'Thống kê điểm',
                 subtitle: 'Bảng điểm tự động',
                 accent: Color(0xFF16A34A),
               ),
-              DashboardFeatureCard(
+              const DashboardFeatureCard(
                 icon: Icons.description_rounded,
                 title: 'Báo cáo',
                 subtitle: 'Định kỳ tháng/quý',

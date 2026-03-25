@@ -58,4 +58,15 @@ class AppTexts {
   static const String dashboardMainFeatures = 'Tính năng chính';
   static const String dashboardRecentActivity = 'Hoạt động gần đây';
   static const String viewAll = 'Xem tất cả';
+
+  // ------------------------------
+  // preOCR Screen
+  // ------------------------------
+  static const String preOcrTitle = 'Quét học bạ';
+  static const String preOcrChooseFromDevice = 'Chọn ảnh từ thiết bị';
+  static const String preOcrCaptureByCamera = 'Chụp ảnh bằng camera';
+  static const String preOcrSelectedImages = 'Ảnh đã chọn';
+  static const String preOcrEmptyHint =
+      'Chưa có ảnh nào. Hãy chọn ảnh hoặc chụp ảnh để tiếp tục.';
+  static const String preOcrConfirm = 'Xác nhận';
 }
