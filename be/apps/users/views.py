@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.users.auth_tokens import create_access_token, create_refresh_token, decode_token
 from apps.users.firebase_auth import verify_id_token as verify_firebase_id_token
 from apps.users.models import User
 from config import settings
@@ -108,6 +109,14 @@ FORM_LOGIN_BODY = openapi.Schema(
     },
 )
 
+REFRESH_TOKEN_BODY = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["refresh_token"],
+    properties={
+        "refresh_token": openapi.Schema(type=openapi.TYPE_STRING),
+    },
+)
+
 
 def _upsert_user_by_uid(uid, defaults):
     user = User.objects(uid=uid).first()
@@ -144,6 +153,23 @@ def _verify_and_upgrade_password(user, raw_password):
         return True
 
     return False
+
+
+def _build_user_payload(user):
+    return {
+        "uid": user.uid,
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar": user.avatar,
+    }
+
+
+def _issue_token_pair(user):
+    return {
+        "access_token": create_access_token(user),
+        "refresh_token": create_refresh_token(user),
+    }
 
 @swagger_auto_schema(method='post', request_body=FORGOT_PASSWORD_SEND_OTP_BODY)
 @api_view(['POST'])
@@ -216,7 +242,7 @@ def change_password(request):
 
         token = auth_header.split(" ")[1]
         try:
-            decoded_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            decoded_token = decode_token(token, expected_type="access")
             user_id = decoded_token["user_id"]
         except jwt.ExpiredSignatureError:
             return Response({"error": "Token đã hết hạn"}, status=401)
@@ -316,24 +342,12 @@ def verify_otp(request):
                 created_at=current_timestamp,
                 last_sign_in_time=current_timestamp,
             )
-
-            payload = {
-                "user_id": user.uid,
-                "exp": current_timestamp + (30 * 24 * 60 * 60),
-                "iat": current_timestamp,
-            }
-            jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+            token_pair = _issue_token_pair(user)
 
             return Response({
                 "message": "Xác minh OTP và đăng ký thành công",
-                "access_token": jwt_token,
-                "user": {
-                    "uid": user.uid,
-                    "full_name": user.full_name,
-                    "email": user.email,
-                    "phone": user.phone,
-                    "avatar": user.avatar,
-                }
+                **token_pair,
+                "user": _build_user_payload(user),
             })
         else:
             return Response({"success": False, "error": "Mã OTP không đúng hoặc đã hết hạn"}, status=400)
@@ -371,18 +385,11 @@ def facebook_login(request):
                 "last_sign_in_time": current_timestamp,
             },
         )
-
-        # Tạo JWT token để duy trì đăng nhập
-        payload = {
-            "user_id": user.uid,
-            "exp": current_timestamp + (30 * 24 * 60 * 60),  # Token hết hạn sau 30 ngày
-            "iat": current_timestamp,
-        }
-        jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        token_pair = _issue_token_pair(user)
 
         return Response({
             "message": "Facebook user authenticated successfully",
-            "access_token": jwt_token,
+            **token_pair,
             "user": {
                 "uid": user.uid,
                 "full_name": user.full_name,
@@ -423,24 +430,12 @@ def google_login(request):
                 "last_sign_in_time": metadata.get("lastLoginAt", 0),
             },
         )
-
-        payload = {
-            "user_id": user.uid,
-            "exp": datetime.utcnow() + timedelta(days=30),
-            "iat": datetime.utcnow(),
-        }
-        jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        token_pair = _issue_token_pair(user)
 
         return Response({
             "message": "User authenticated successfully",
-            "access_token": jwt_token,
-            "user": {
-                "uid": user.uid,
-                "full_name": user.full_name,
-                "email": user.email,
-                "phone": user.phone,
-                "avatar": user.avatar,
-            }
+            **token_pair,
+            "user": _build_user_payload(user),
         }, status=200)
 
     except Exception as e:
@@ -480,24 +475,12 @@ def form_register(request):
             created_at=current_timestamp,
             last_sign_in_time=current_timestamp,
         )
-
-        payload = {
-            "user_id": user.uid,
-            "exp": current_timestamp + (30 * 24 * 60 * 60),
-            "iat": current_timestamp,
-        }
-        jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        token_pair = _issue_token_pair(user)
 
         return Response({
             "message": "Đăng ký thành công",
-            "access_token": jwt_token,
-            "user": {
-                "uid": user.uid,
-                "full_name": user.full_name,
-                "email": user.email,
-                "phone": user.phone,
-                "avatar": user.avatar,
-            }
+            **token_pair,
+            "user": _build_user_payload(user),
         })
 
     except Exception as e:
@@ -527,25 +510,12 @@ def form_login(request):
         # So sánh password (giả định đang lưu plain text hoặc hash đã biết)
         if not _verify_and_upgrade_password(user, password):
             return Response({"error": "Sai mật khẩu"}, status=401)
-
-        # Tạo JWT token
-        payload = {
-            "user_id": user.uid,
-            "exp": datetime.utcnow() + timedelta(days=30),
-            "iat": datetime.utcnow(),
-        }
-        jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        token_pair = _issue_token_pair(user)
 
         return Response({
             "message": "Đăng nhập thành công",
-            "access_token": jwt_token,
-            "user": {
-                "uid": user.uid,
-                "full_name": user.full_name,
-                "email": user.email,
-                "phone": user.phone,
-                "avatar": user.avatar,
-            }
+            **token_pair,
+            "user": _build_user_payload(user),
         })
 
     except Exception as e:
@@ -560,17 +530,11 @@ def verify_token(request):
         if auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             try:
-                decoded_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                decoded_token = decode_token(token, expected_type="access")
                 user = User.objects.get(uid=decoded_token["user_id"])
                 return Response({
                     "message": "Google User authenticated",
-                    "user": {
-                        "uid": user.uid,
-                        "full_name": user.full_name,
-                        "email": user.email,
-                        "phone": user.phone,
-                        "avatar": user.avatar,
-                    }
+                    "user": _build_user_payload(user),
                 })
             except jwt.ExpiredSignatureError:
                 return Response({"error": "Token expired"}, status=401)
@@ -580,17 +544,11 @@ def verify_token(request):
         elif auth_header.startswith("Facebook "):
             fb_uid = auth_header.split(" ")[1]
             try:
-                decoded_token = jwt.decode(fb_uid, SECRET_KEY, algorithms=["HS256"])
+                decoded_token = decode_token(fb_uid, expected_type="access")
                 user = User.objects.get(uid=decoded_token["user_id"])
                 return Response({
                     "message": "Facebook User authenticated",
-                    "user": {
-                        "uid": user.uid,
-                        "full_name": user.full_name,
-                        "email": user.email,
-                        "phone": user.phone,
-                        "avatar": user.avatar,
-                    }
+                    "user": _build_user_payload(user),
                 })
             except jwt.ExpiredSignatureError:
                 return Response({"error": "Token expired"}, status=401)
@@ -601,4 +559,40 @@ def verify_token(request):
 
     except Exception as e:
         logger.error(f"Error in verify_token: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
+@swagger_auto_schema(method='post', request_body=REFRESH_TOKEN_BODY)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    try:
+        refresh_token_value = request.data.get("refresh_token", "").strip()
+        if not refresh_token_value:
+            return Response({"error": "Thiếu refresh token"}, status=400)
+
+        try:
+            decoded_token = decode_token(refresh_token_value, expected_type="refresh")
+        except jwt.ExpiredSignatureError:
+            return Response({"error": "Refresh token đã hết hạn"}, status=401)
+        except jwt.InvalidTokenError:
+            return Response({"error": "Refresh token không hợp lệ"}, status=401)
+
+        user_id = decoded_token.get("user_id")
+        if not user_id:
+            return Response({"error": "Refresh token không hợp lệ"}, status=401)
+
+        try:
+            user = User.objects.get(uid=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Không tìm thấy người dùng"}, status=404)
+
+        token_pair = _issue_token_pair(user)
+        return Response({
+            "message": "Làm mới token thành công",
+            **token_pair,
+            "user": _build_user_payload(user),
+        })
+
+    except Exception as e:
         return Response({"error": str(e)}, status=500)
