@@ -82,4 +82,14 @@ class AppTexts {
   static const String ocrClass = 'Lớp';
   static const String ocrSemester = 'Học kỳ';
   static const String ocrAverageScore = 'Điểm trung bình môn';
+
+    // ------------------------------
+    // Detail HBA Screen
+    // ------------------------------
+    static const String detailHbaTitle = 'Chi tiết bảng điểm';
+    static const String detailHbaSubtitle = 'Học kỳ I • 2023-2024';
+    static const String detailResultTitle = 'Kết quả chi tiết';
+    static const String detailTeacherComment = 'Nhận xét của giáo viên';
+    static const String detailAnalyzeAi = 'Phân tích AI';
+    static const String detailExportReport = 'Xuất báo cáo';
 }

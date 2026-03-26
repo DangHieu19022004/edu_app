@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/detail_hba_screen.dart';
+import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
 
@@ -78,7 +80,13 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _buildGradeTabs(),
+                    GradeTabs(
+                      selectedGrade: _selectedGrade,
+                      onChanged: (grade) {
+                        if (_selectedGrade == grade) return;
+                        setState(() => _selectedGrade = grade);
+                      },
+                    ),
                     const SizedBox(height: 10),
                     _buildResultCard(),
                     const SizedBox(height: 20),
@@ -101,11 +109,9 @@ class _OcrScreenState extends State<OcrScreen> {
                         ),
                         child: TextButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Đã xác nhận và lưu kết quả OCR.',
-                                ),
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const DetailHbaScreen(),
                               ),
                             );
                           },
@@ -129,70 +135,6 @@ class _OcrScreenState extends State<OcrScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildGradeTabs() {
-    const List<int> grades = [10, 11, 12];
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF4FF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: grades.map((grade) {
-          final bool isSelected = _selectedGrade == grade;
-
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Material(
-                color: isSelected ? AppColors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () {
-                    if (_selectedGrade == grade) return;
-                    setState(() => _selectedGrade = grade);
-                  },
-                  overlayColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.pressed)) {
-                      return AppColors.primary.withValues(alpha: 0.12);
-                    }
-                    return null;
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 90),
-                    curve: Curves.easeOut,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0x332348EF)
-                            : Colors.transparent,
-                      ),
-                    ),
-                    child: Text(
-                      'Lớp $grade',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.dashboardBody,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.subtitle,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
