@@ -1,7 +1,7 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
-import 'package:edu_app_flutter/views/screens/list_hba_screen.dart';
+import 'package:edu_app_flutter/views/screens/manage_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
 import 'package:edu_app_flutter/views/screens/profile_screen.dart';
 import 'package:edu_app_flutter/views/screens/statistics_screen.dart';

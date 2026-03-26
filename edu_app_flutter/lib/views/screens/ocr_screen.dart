@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
-import 'package:edu_app_flutter/views/screens/detail_hba_screen.dart';
+import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
