@@ -42,7 +42,7 @@ class LoginScreen extends StatelessWidget {
 class _TopIllustration extends StatelessWidget {
   const _TopIllustration();
 
-  static const String _illustrationAsset = 'lib/assets/logo1.png';
+  static const String _illustrationAsset = 'lib/assets/logo.png';
 
   @override
   Widget build(BuildContext context) {

@@ -155,7 +155,7 @@ class _LogoSection extends StatelessWidget {
             child: Transform.scale(
               scale: 1.3,
               child: Image.asset(
-                'lib/assets/logo1.png',
+                'lib/assets/logo.png',
                 fit: BoxFit.cover,
                 width: 136,
                 height: 136,
@@ -317,7 +317,7 @@ class _LoadingSection extends StatelessWidget {
               Icon(Icons.verified_user_rounded, size: 16, color: Color(0xFF60A5FA)),
               SizedBox(width: 8),
               Text(
-                'HỆ THỐNG BẢO MẬT AI',
+                'Chuyển đổi số công nghệ',
                 style: TextStyle(
                   fontSize: 10,
                   color: Color(0xB3FFFFFF),

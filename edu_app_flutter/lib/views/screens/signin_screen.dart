@@ -255,7 +255,7 @@ class _SigninScreenState extends State<SigninScreen> {
 
 class _SigninHero extends StatelessWidget {
   const _SigninHero();
-  static const String _illustrationAsset = 'lib/assets/logo1.png';
+  static const String _illustrationAsset = 'lib/assets/logo.png';
   @override
   Widget build(BuildContext context) {
     return Column(
