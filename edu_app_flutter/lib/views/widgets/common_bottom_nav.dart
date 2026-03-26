@@ -1,31 +1,28 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
+import 'package:edu_app_flutter/views/screens/list_hba_screen.dart';
+import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
+import 'package:edu_app_flutter/views/screens/profile_screen.dart';
+import 'package:edu_app_flutter/views/screens/statistics_screen.dart';
 import 'package:flutter/material.dart';
 
-class BottomNavItemData {
-  const BottomNavItemData({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
+enum BottomNavTab {
+  home,
+  statistics,
+  classes,
+  profile,
 }
 
 class CommonBottomNav extends StatelessWidget {
   const CommonBottomNav({
     super.key,
-    required this.items,
-    required this.currentIndex,
-    required this.onTap,
-    required this.centerLabel,
-    required this.centerIcon,
-    this.onCenterTap,
-  }) : assert(items.length == 4, 'Bottom nav expects exactly 4 side items.');
+    required this.currentTab,
+    this.onScanTap,
+  });
 
-  final List<BottomNavItemData> items;
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final String centerLabel;
-  final IconData centerIcon;
-  final VoidCallback? onCenterTap;
+  final BottomNavTab currentTab;
+  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +45,39 @@ class CommonBottomNav extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(child: _buildNavItem(index: 0)),
-              Expanded(child: _buildNavItem(index: 1)),
-              _buildCenterAction(),
-              Expanded(child: _buildNavItem(index: 2)),
-              Expanded(child: _buildNavItem(index: 3)),
+              Expanded(
+                child: _buildNavItem(
+                  context: context,
+                  tab: BottomNavTab.home,
+                  icon: AppIcons.home,
+                  label: 'Trang chủ',
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  context: context,
+                  tab: BottomNavTab.statistics,
+                  icon: AppIcons.stats,
+                  label: 'Thống kê',
+                ),
+              ),
+              _buildCenterAction(context),
+              Expanded(
+                child: _buildNavItem(
+                  context: context,
+                  tab: BottomNavTab.classes,
+                  icon: AppIcons.classList,
+                  label: 'Lớp',
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  context: context,
+                  tab: BottomNavTab.profile,
+                  icon: AppIcons.profile,
+                  label: 'Cá nhân',
+                ),
+              ),
             ],
           ),
         ),
@@ -60,26 +85,30 @@ class CommonBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem({required int index}) {
-    final item = items[index];
-    final selected = currentIndex == index;
+  Widget _buildNavItem({
+    required BuildContext context,
+    required BottomNavTab tab,
+    required IconData icon,
+    required String label,
+  }) {
+    final selected = currentTab == tab;
 
     return InkWell(
       borderRadius: BorderRadius.circular(22),
-      onTap: () => onTap(index),
+      onTap: () => _onTabTapped(context, tab),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              item.icon,
+              icon,
               size: AppFontSizes.icon24,
               color: selected ? AppColors.primary : const Color(0xFF94A3B8),
             ),
             const SizedBox(height: 2),
             Text(
-              item.label,
+              label,
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardTiny,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
@@ -92,7 +121,7 @@ class CommonBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildCenterAction() {
+  Widget _buildCenterAction(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -14),
       child: Column(
@@ -102,7 +131,7 @@ class CommonBottomNav extends StatelessWidget {
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(19),
             child: InkWell(
-              onTap: onCenterTap,
+              onTap: () => _onCenterTap(context),
               borderRadius: BorderRadius.circular(19),
               child: Container(
                 width: 56,
@@ -118,14 +147,14 @@ class CommonBottomNav extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(centerIcon, color: AppColors.white, size: 28),
+                child: Icon(AppIcons.scan, color: AppColors.white, size: 28),
               ),
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            centerLabel,
-            style: const TextStyle(
+          const Text(
+            'Quét',
+            style: TextStyle(
               fontSize: AppFontSizes.dashboardTiny,
               fontWeight: FontWeight.w800,
               color: AppColors.primary,
@@ -133,6 +162,40 @@ class CommonBottomNav extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _onCenterTap(BuildContext context) {
+    if (onScanTap != null) {
+      onScanTap!.call();
+      return;
+    }
+    _push(context, const PreOcrScreen());
+  }
+
+  void _onTabTapped(BuildContext context, BottomNavTab tab) {
+    if (tab == currentTab) return;
+
+    switch (tab) {
+      case BottomNavTab.home:
+        _replaceAll(context, const DashboardScreen());
+      case BottomNavTab.statistics:
+        _replaceAll(context, const StatisticsScreen());
+      case BottomNavTab.classes:
+        _replaceAll(context, const ListHbaScreen());
+      case BottomNavTab.profile:
+        _replaceAll(context, const ProfileScreen());
+    }
+  }
+
+  void _push(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  void _replaceAll(BuildContext context, Widget screen) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => screen),
+      (route) => false,
     );
   }
 }

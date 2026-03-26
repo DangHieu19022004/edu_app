@@ -75,7 +75,9 @@ class AppIcons {
   static const IconData search = Icons.search;
   static const IconData tune = Icons.tune_rounded;
   static const IconData home = Icons.home_rounded;
+  static const IconData stats = Icons.query_stats_rounded;
   static const IconData scan = Icons.document_scanner_rounded;
+  static const IconData classList = Icons.groups_rounded;
   static const IconData find = Icons.manage_search_rounded;
   static const IconData chatbot = Icons.smart_toy_rounded;
   static const IconData profile = Icons.account_circle_rounded;

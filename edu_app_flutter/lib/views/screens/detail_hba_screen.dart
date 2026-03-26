@@ -15,7 +15,6 @@ class DetailHbaScreen extends StatefulWidget {
 
 class _DetailHbaScreenState extends State<DetailHbaScreen> {
   int _selectedGrade = 12;
-  int _bottomIndex = 2;
 
   final List<_SubjectScoreRow> _scores = const [
     _SubjectScoreRow(subject: 'Toán học', gk: '9.0', ck: '8.5', tb: '8.8'),
@@ -75,17 +74,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
               left: 0,
               bottom: 0,
               child: CommonBottomNav(
-                currentIndex: _bottomIndex,
-                onTap: (index) => setState(() => _bottomIndex = index),
-                centerLabel: 'Quét',
-                centerIcon: AppIcons.scan,
-                onCenterTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                items: const [
-                  BottomNavItemData(icon: AppIcons.home, label: 'Trang chủ'),
-                  BottomNavItemData(icon: AppIcons.find, label: 'Tra cứu'),
-                  BottomNavItemData(icon: Icons.assignment_rounded, label: 'Báo cáo'),
-                  BottomNavItemData(icon: AppIcons.profile, label: 'Cá nhân'),
-                ],
+                currentTab: BottomNavTab.classes,
               ),
             ),
           ],

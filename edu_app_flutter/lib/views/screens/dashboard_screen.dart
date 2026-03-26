@@ -17,8 +17,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _bottomIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,17 +41,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               left: 0,
               bottom: 0,
               child: CommonBottomNav(
-                currentIndex: _bottomIndex,
-                onTap: (index) => setState(() => _bottomIndex = index),
-                centerLabel: 'Quét',
-                centerIcon: AppIcons.scan,
-                onCenterTap: _openPreOcr,
-                items: const [
-                  BottomNavItemData(icon: AppIcons.home, label: 'Trang chủ'),
-                  BottomNavItemData(icon: AppIcons.find, label: 'Tra cứu'),
-                  BottomNavItemData(icon: AppIcons.chatbot, label: 'Chatbot'),
-                  BottomNavItemData(icon: AppIcons.profile, label: 'Cá nhân'),
-                ],
+                currentTab: BottomNavTab.home,
+                onScanTap: _openPreOcr,
               ),
             ),
           ],
