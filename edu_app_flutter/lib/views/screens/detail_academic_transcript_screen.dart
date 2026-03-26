@@ -1,6 +1,7 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/views/screens/manage_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
@@ -36,7 +37,11 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
                 OcrFlowHeader(
                   title: AppTexts.detailHbaTitle,
                   subtitle: AppTexts.detailHbaSubtitle,
-                  onBack: () => Navigator.of(context).pop(),
+                  onBack: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const ListHbaScreen()),
+                    );
+                  },
                   trailing: Material(
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: const CircleBorder(),
