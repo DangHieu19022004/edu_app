@@ -4,7 +4,7 @@ import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_activity_item.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_feature_card.dart';
-import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_quick_action_chip.dart';
+// import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_quick_action_chip.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_section_header.dart';
 import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
 import 'package:flutter/material.dart';

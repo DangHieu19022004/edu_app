@@ -410,16 +410,16 @@ class _NetworkNodePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _PlaceholderHomeScreen extends StatelessWidget {
-  const _PlaceholderHomeScreen();
+// class _PlaceholderHomeScreen extends StatelessWidget {
+//   const _PlaceholderHomeScreen();
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Edu App')),
-      body: const Center(
-        child: Text('Home screen placeholder'),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Edu App')),
+//       body: const Center(
+//         child: Text('Home screen placeholder'),
+//       ),
+//     );
+//   }
+// }

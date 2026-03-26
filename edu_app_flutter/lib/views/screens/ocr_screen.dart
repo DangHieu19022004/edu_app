@@ -227,7 +227,7 @@ class _OcrScreenState extends State<OcrScreen> {
                       children: [
                         Image.file(File(firstPath), fit: BoxFit.cover),
                         Container(
-                          color: AppColors.primary.withValues(alpha: 0.08),
+                          color: AppColors.primary.withValues(alpha: 0.136),
                         ),
                         Align(
                           alignment: Alignment.topCenter,
