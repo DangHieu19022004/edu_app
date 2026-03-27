@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/views/screens/splash_screen.dart';
 
 void main() {
+  assert(() {
+    debugPrint('API Base URL: ${ApiConfig.apiBaseUrl}');
+    return true;
+  }());
+
   runApp(const EduApp());
 }
 
