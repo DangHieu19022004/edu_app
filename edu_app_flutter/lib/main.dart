@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:edu_app_flutter/constants/api_config.dart';
+import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/views/screens/splash_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthSession.instance.bootstrap();
+
   assert(() {
     debugPrint('API Base URL: ${ApiConfig.apiBaseUrl}');
     return true;
