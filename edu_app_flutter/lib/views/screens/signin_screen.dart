@@ -3,6 +3,7 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/controllers/register_controller.dart';
 
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
@@ -12,18 +13,81 @@ class SigninScreen extends StatefulWidget {
 }
 
 class _SigninScreenState extends State<SigninScreen> {
+  final RegisterController _registerController = RegisterController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _schoolController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _registerController.addListener(_onRegisterStateChanged);
+  }
+
+  void _onRegisterStateChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    if (_registerController.status == RegisterStatus.error &&
+        _registerController.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_registerController.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+
+    if (_registerController.status == RegisterStatus.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tao tai khoan thanh cong'),
+          backgroundColor: Color(0xFF1F8B4C),
+        ),
+      );
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _submitRegister() async {
+    final fullName = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui long nhap day du thong tin')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mat khau toi thieu 6 ky tu')),
+      );
+      return;
+    }
+
+    await _registerController.register(
+      fullName: fullName,
+      email: email,
+      phone: phone,
+      password: password,
+    );
+  }
+
+  @override
   void dispose() {
+    _registerController.removeListener(_onRegisterStateChanged);
+    _registerController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _schoolController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -139,44 +203,63 @@ class _SigninScreenState extends State<SigninScreen> {
                     ),
                     const SizedBox(height: 14),
                     _SignInputField(
-                      label: AppTexts.schoolLabel,
-                      hintText: AppTexts.schoolHint,
-                      icon: AppIcons.apartmentOutline,
-                      controller: _schoolController,
+                      label: 'So dien thoai',
+                      hintText: 'Nhap so dien thoai',
+                      icon: AppIcons.phone,
+                      keyboardType: TextInputType.phone,
+                      controller: _phoneController,
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1337EC), Color(0xFF2458F3)],
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x332348EF),
-                              blurRadius: 16,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: TextButton(
-                          onPressed: () {},
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
+                    AnimatedBuilder(
+                      animation: _registerController,
+                      builder: (context, _) {
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1337EC), Color(0xFF2458F3)],
+                              ),
                               borderRadius: BorderRadius.circular(14),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x332348EF),
+                                  blurRadius: 16,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            textStyle: const TextStyle(
-                              fontSize: AppFontSizes.signInButton,
-                              fontWeight: FontWeight.w700,
+                            child: TextButton(
+                              onPressed: _registerController.isLoading
+                                  ? null
+                                  : _submitRegister,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: AppFontSizes.signInButton,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: _registerController.isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.4,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const Text(AppTexts.createAccount),
                             ),
                           ),
-                          child: const Text(AppTexts.createAccount),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 18),
                     const _DividerLabel(label: AppTexts.orLower),
