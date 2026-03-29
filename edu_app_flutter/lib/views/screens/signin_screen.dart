@@ -4,6 +4,8 @@ import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/controllers/register_controller.dart';
+import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
@@ -26,29 +28,30 @@ class _SigninScreenState extends State<SigninScreen> {
     _registerController.addListener(_onRegisterStateChanged);
   }
 
-  void _onRegisterStateChanged() {
+  Future<void> _onRegisterStateChanged() async {
     if (!mounted) {
       return;
     }
 
     if (_registerController.status == RegisterStatus.error &&
         _registerController.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_registerController.errorMessage!),
-          backgroundColor: Colors.red.shade700,
-        ),
+      await AppNoticeModal.showError(
+        context,
+        message: _registerController.errorMessage!,
       );
     }
 
     if (_registerController.status == RegisterStatus.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tao tai khoan thanh cong'),
-          backgroundColor: Color(0xFF1F8B4C),
-        ),
+      await AppNoticeModal.showSuccess(
+        context,
+        message: 'Tao tai khoan thanh cong',
       );
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -59,15 +62,17 @@ class _SigninScreenState extends State<SigninScreen> {
     final password = _passwordController.text;
 
     if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui long nhap day du thong tin')),
+      await AppNoticeModal.showError(
+        context,
+        message: 'Vui long nhap day du thong tin',
       );
       return;
     }
 
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mat khau toi thieu 6 ky tu')),
+      await AppNoticeModal.showError(
+        context,
+        message: 'Mat khau toi thieu 6 ky tu',
       );
       return;
     }

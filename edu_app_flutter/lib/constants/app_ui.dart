@@ -57,6 +57,7 @@ class AppIcons {
   static const IconData lock = Icons.lock;
   static const IconData lockOutline = Icons.lock_outline;
   static const IconData personOutline = Icons.person_outline;
+  static const IconData phone = Icons.phone_outlined;
   static const IconData apartmentOutline = Icons.apartment_outlined;
 
   // ------------------------------
