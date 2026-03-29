@@ -47,3 +47,4 @@ app.*.map.json
 /android/app/release
 templateUI
 API_FRONTEND_INTEGRATION.md
+google-services.json

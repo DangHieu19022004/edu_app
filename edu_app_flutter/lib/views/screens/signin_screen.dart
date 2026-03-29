@@ -85,6 +85,15 @@ class _SigninScreenState extends State<SigninScreen> {
     );
   }
 
+  Future<void> _submitFacebookLogin() async {
+    await AppNoticeModal.show(
+      context,
+      type: AppNoticeType.info,
+      title: 'Facebook login',
+      message: 'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
+    );
+  }
+
   @override
   void dispose() {
     _registerController.removeListener(_onRegisterStateChanged);
@@ -296,6 +305,42 @@ class _SigninScreenState extends State<SigninScreen> {
                           ),
                           SizedBox(width: 10),
                           Text(AppTexts.continueWithGoogle),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        side: const BorderSide(color: Color(0xFFD4DDE8), width: 1.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        foregroundColor: const Color(0xFF21324F),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: _submitFacebookLogin,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 13,
+                            backgroundColor: Color(0xFF1877F2),
+                            child: Text(
+                              'f',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                height: 0.95,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text(AppTexts.continueWithFacebook),
                         ],
                       ),
                     ),

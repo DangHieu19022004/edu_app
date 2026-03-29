@@ -41,6 +41,7 @@ class AppTexts {
   static const String orUpper = 'HOẶC';
   static const String orLower = 'Hoặc';
   static const String continueWithGoogle = 'Tiếp tục với Google';
+    static const String continueWithFacebook = 'Tiếp tục với Facebook';
 
   // ------------------------------
   // Footer Links

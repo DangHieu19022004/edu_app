@@ -191,6 +191,15 @@ class _LoginCardState extends State<_LoginCard> {
     }
   }
 
+  Future<void> _submitFacebookLogin() async {
+    await AppNoticeModal.show(
+      context,
+      type: AppNoticeType.info,
+      title: 'Facebook login',
+      message: 'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
+    );
+  }
+
   @override
   void dispose() {
     _loginController.removeListener(_onLoginStateChanged);
@@ -374,6 +383,42 @@ class _LoginCardState extends State<_LoginCard> {
                 Text('G', style: TextStyle(fontSize: 30, color: Color(0xFFDB4437))),
                 SizedBox(width: 12),
                 Text(AppTexts.continueWithGoogle),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(58),
+              side: const BorderSide(color: Color(0xFFD2DCE8), width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              foregroundColor: const Color(0xFF21324F),
+              textStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            onPressed: _loginController.isLoading ? null : _submitFacebookLogin,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Color(0xFF1877F2),
+                  child: Text(
+                    'f',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      height: 0.9,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(AppTexts.continueWithFacebook),
               ],
             ),
           ),
