@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1085037146584",
+    "project_id": "eduapp-437c1",
+    "storage_bucket": "eduapp-437c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085037146584:android:7038f2d7f9cfc3dde0c2ad",
+        "android_client_info": {
+          "package_name": "com.example.edu_app_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1085037146584-8omjr9edao8i3nbts2kb6rbf183slktl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.edu_app_flutter",
+            "certificate_hash": "c3b6ee7490736e4d070076f48788c506f5c1d6e5"
+          }
+        },
+        {
+          "client_id": "1085037146584-m8rq232m3ksjbhq8c9st3iggh83l84v9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoti4DliOw_T7PhvXxy9wCzaEzAxk-S5M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1085037146584-m8rq232m3ksjbhq8c9st3iggh83l84v9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

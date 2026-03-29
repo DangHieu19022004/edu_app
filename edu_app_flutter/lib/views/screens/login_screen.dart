@@ -4,6 +4,8 @@ import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/controllers/login_controller.dart';
+import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/google_auth_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/screens/signin_screen.dart';
 import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
@@ -93,6 +95,7 @@ class _LoginCard extends StatefulWidget {
 
 class _LoginCardState extends State<_LoginCard> {
   final LoginController _loginController = LoginController();
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
@@ -120,12 +123,16 @@ class _LoginCardState extends State<_LoginCard> {
     }
 
     if (_loginController.status == LoginStatus.success) {
+      final successMessage = _loginController.response?.message.isNotEmpty == true
+          ? _loginController.response!.message
+          : (_loginController.googleResponse?.message.isNotEmpty == true
+              ? _loginController.googleResponse!.message
+              : 'Chao mung ban quay tro lai voi EduTeacher.');
+
       await AppNoticeModal.showSuccess(
         context,
         title: 'Dang nhap thanh cong',
-        message: _loginController.response?.message.isNotEmpty == true
-            ? _loginController.response!.message
-            : 'Chao mung ban quay tro lai voi EduTeacher.',
+        message: successMessage,
         showAction: false,
         autoDismissDuration: const Duration(milliseconds: 1500),
         barrierDismissible: false,
@@ -161,6 +168,27 @@ class _LoginCardState extends State<_LoginCard> {
       emailOrPhone: emailOrPhone,
       password: password,
     );
+  }
+
+  Future<void> _submitGoogleLogin() async {
+    try {
+      final token = await _googleAuthService.getFirebaseIdToken();
+      if (!mounted || token == null || token.trim().isEmpty) {
+        return;
+      }
+
+      await _loginController.loginWithGoogleToken(token: token);
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showError(
+        context,
+        title: 'Google Sign-In that bai',
+        message: e.message,
+      );
+    }
   }
 
   @override
@@ -339,7 +367,7 @@ class _LoginCardState extends State<_LoginCard> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            onPressed: () {},
+            onPressed: _loginController.isLoading ? null : _submitGoogleLogin,
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
