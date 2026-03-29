@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:edu_app_flutter/constants/app_colors.dart';
@@ -12,6 +14,9 @@ class AppNoticeModal {
     required String message,
     String title = 'Thanh cong',
     String actionLabel = 'Dong',
+    bool barrierDismissible = true,
+    bool showAction = true,
+    Duration? autoDismissDuration,
   }) {
     return show(
       context,
@@ -19,6 +24,9 @@ class AppNoticeModal {
       title: title,
       message: message,
       actionLabel: actionLabel,
+      barrierDismissible: barrierDismissible,
+      showAction: showAction,
+      autoDismissDuration: autoDismissDuration,
     );
   }
 
@@ -27,6 +35,9 @@ class AppNoticeModal {
     required String message,
     String title = 'Co loi xay ra',
     String actionLabel = 'Thu lai',
+    bool barrierDismissible = true,
+    bool showAction = true,
+    Duration? autoDismissDuration,
   }) {
     return show(
       context,
@@ -34,6 +45,9 @@ class AppNoticeModal {
       title: title,
       message: message,
       actionLabel: actionLabel,
+      barrierDismissible: barrierDismissible,
+      showAction: showAction,
+      autoDismissDuration: autoDismissDuration,
     );
   }
 
@@ -44,6 +58,8 @@ class AppNoticeModal {
     required String message,
     String actionLabel = 'Da hieu',
     bool barrierDismissible = true,
+    bool showAction = true,
+    Duration? autoDismissDuration,
   }) {
     return showGeneralDialog<void>(
       context: context,
@@ -57,6 +73,8 @@ class AppNoticeModal {
           title: title,
           message: message,
           actionLabel: actionLabel,
+          showAction: showAction,
+          autoDismissDuration: autoDismissDuration,
         );
       },
       transitionBuilder: (context, animation, _, child) {
@@ -77,22 +95,52 @@ class AppNoticeModal {
   }
 }
 
-class _AppNoticeSheet extends StatelessWidget {
+class _AppNoticeSheet extends StatefulWidget {
   const _AppNoticeSheet({
     required this.type,
     required this.title,
     required this.message,
     required this.actionLabel,
+    required this.showAction,
+    required this.autoDismissDuration,
   });
 
   final AppNoticeType type;
   final String title;
   final String message;
   final String actionLabel;
+  final bool showAction;
+  final Duration? autoDismissDuration;
+
+  @override
+  State<_AppNoticeSheet> createState() => _AppNoticeSheetState();
+}
+
+class _AppNoticeSheetState extends State<_AppNoticeSheet> {
+  Timer? _autoDismissTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoDismissDuration != null) {
+      _autoDismissTimer = Timer(widget.autoDismissDuration!, () {
+        if (!mounted) {
+          return;
+        }
+        Navigator.of(context).pop();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _autoDismissTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final visual = _NoticeVisual.fromType(type);
+    final visual = _NoticeVisual.fromType(widget.type);
 
     return SafeArea(
       child: Center(
@@ -144,7 +192,7 @@ class _AppNoticeSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      title,
+                      widget.title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppColors.title,
@@ -155,7 +203,7 @@ class _AppNoticeSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      message,
+                      widget.message,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppColors.subtitle,
@@ -164,36 +212,38 @@ class _AppNoticeSheet extends StatelessWidget {
                         height: 1.35,
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              visual.baseColor,
-                              visual.baseColor.withOpacity(0.82),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                    if (widget.showAction) ...[
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                visual.baseColor,
+                                visual.baseColor.withOpacity(0.82),
+                              ],
                             ),
-                            textStyle: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Text(actionLabel),
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            child: Text(widget.actionLabel),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

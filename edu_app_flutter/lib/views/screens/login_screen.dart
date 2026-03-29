@@ -3,8 +3,10 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/controllers/login_controller.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/screens/signin_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -90,13 +92,81 @@ class _LoginCard extends StatefulWidget {
 }
 
 class _LoginCardState extends State<_LoginCard> {
+  final LoginController _loginController = LoginController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loginController.addListener(_onLoginStateChanged);
+  }
+
+  Future<void> _onLoginStateChanged() async {
+    if (!mounted || _loginController.isLoading) {
+      return;
+    }
+
+    if (_loginController.status == LoginStatus.error &&
+        _loginController.errorMessage != null) {
+      await AppNoticeModal.showError(
+        context,
+        message: _loginController.errorMessage!,
+      );
+      _loginController.resetState();
+      return;
+    }
+
+    if (_loginController.status == LoginStatus.success) {
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Dang nhap thanh cong',
+        message: _loginController.response?.message.isNotEmpty == true
+            ? _loginController.response!.message
+            : 'Chao mung ban quay tro lai voi EduTeacher.',
+        showAction: false,
+        autoDismissDuration: const Duration(milliseconds: 1500),
+        barrierDismissible: false,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      _loginController.resetState();
+
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  Future<void> _submitLogin() async {
+    final emailOrPhone = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (emailOrPhone.isEmpty || password.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Thieu thong tin',
+        message: 'Vui long nhap day du email/so dien thoai va mat khau.',
+      );
+      return;
+    }
+
+    await _loginController.login(
+      emailOrPhone: emailOrPhone,
+      password: password,
+    );
+  }
+
+  @override
   void dispose() {
+    _loginController.removeListener(_onLoginStateChanged);
+    _loginController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -242,12 +312,14 @@ class _LoginCardState extends State<_LoginCard> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          _PrimaryButton(
-            label: AppTexts.loginButton,
-            icon: AppIcons.login,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          AnimatedBuilder(
+            animation: _loginController,
+            builder: (context, _) {
+              return _PrimaryButton(
+                label: AppTexts.loginButton,
+                icon: AppIcons.login,
+                onPressed: _loginController.isLoading ? null : _submitLogin,
+                isLoading: _loginController.isLoading,
               );
             },
           ),
@@ -373,11 +445,13 @@ class _PrimaryButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -410,8 +484,17 @@ class _PrimaryButton extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          icon: Text(label, style: const TextStyle(letterSpacing: 0.1)),
-          label: Icon(icon, size: 24),
+          icon: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(label, style: const TextStyle(letterSpacing: 0.1)),
+          label: isLoading ? const SizedBox.shrink() : Icon(icon, size: 24),
         ),
       ),
     );
