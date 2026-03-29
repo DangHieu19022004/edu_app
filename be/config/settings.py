@@ -29,10 +29,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '!xz2i&l=ubrctgw5@gm9v(i&)_&0$y_@_#3v1tf7e0a0yf1_dy'
 
+
+def parse_csv_env(var_name: str, default: str = ""):
+    """Parse comma-separated env values and normalize quotes/spaces."""
+    raw_value = os.getenv(var_name, default)
+    values = []
+    for item in raw_value.split(","):
+        normalized = item.strip().strip('"').strip("'")
+        if normalized:
+            values.append(normalized)
+    return values
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+default_allowed_hosts = "*" if DEBUG else "localhost,127.0.0.1"
+ALLOWED_HOSTS = parse_csv_env("ALLOWED_HOSTS", default_allowed_hosts)
 
 
 # Application definition
@@ -182,7 +195,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "True") == "True"
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+CORS_ALLOWED_ORIGINS = parse_csv_env("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 
 # REST Framework Settings
 REST_FRAMEWORK = {
