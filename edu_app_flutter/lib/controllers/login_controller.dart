@@ -1,3 +1,4 @@
+import 'package:edu_app_flutter/models/facebook_login_models.dart';
 import 'package:edu_app_flutter/models/form_login_models.dart';
 import 'package:edu_app_flutter/models/google_login_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -21,12 +22,14 @@ class LoginController extends ChangeNotifier {
   String? _errorMessage;
   FormLoginResponse? _response;
   GoogleLoginResponse? _googleResponse;
+  FacebookLoginResponse? _facebookResponse;
 
   LoginStatus get status => _status;
   bool get isLoading => _status == LoginStatus.loading;
   String? get errorMessage => _errorMessage;
   FormLoginResponse? get response => _response;
   GoogleLoginResponse? get googleResponse => _googleResponse;
+  FacebookLoginResponse? get facebookResponse => _facebookResponse;
 
   Future<FormLoginResponse?> login({
     required String emailOrPhone,
@@ -46,6 +49,7 @@ class LoginController extends ChangeNotifier {
 
       _response = loginResponse;
       _googleResponse = null;
+      _facebookResponse = null;
       _status = LoginStatus.success;
       notifyListeners();
       return loginResponse;
@@ -75,6 +79,44 @@ class LoginController extends ChangeNotifier {
 
       _googleResponse = loginResponse;
       _response = null;
+      _facebookResponse = null;
+      _status = LoginStatus.success;
+      notifyListeners();
+      return loginResponse;
+    } on ApiException catch (e) {
+      _status = LoginStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _status = LoginStatus.error;
+      _errorMessage = 'Unexpected error. Please try again.';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<FacebookLoginResponse?> loginWithFacebookProfile({
+    required String uid,
+    required String displayName,
+    required String photoUrl,
+  }) async {
+    _status = LoginStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = FacebookLoginRequest(
+        uid: uid.trim(),
+        displayName: displayName.trim(),
+        photoUrl: photoUrl.trim(),
+      );
+
+      final loginResponse = await _authService.loginByFacebookProfile(request);
+
+      _facebookResponse = loginResponse;
+      _response = null;
+      _googleResponse = null;
       _status = LoginStatus.success;
       notifyListeners();
       return loginResponse;
@@ -96,6 +138,7 @@ class LoginController extends ChangeNotifier {
     _errorMessage = null;
     _response = null;
     _googleResponse = null;
+    _facebookResponse = null;
     notifyListeners();
   }
 }

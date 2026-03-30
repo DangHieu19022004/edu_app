@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/views/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await AuthSession.instance.bootstrap();
 
   assert(() {

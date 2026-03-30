@@ -43,6 +43,26 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>FacebookAppID</key>
+	<string>1393782815364458</string>
+	<key>FacebookClientToken</key>
+	<string>38759410220d9776c0c77e12f8e6a813</string>
+	<key>FacebookDisplayName</key>
+	<string>Edu App Flutter</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1393782815364458</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>

@@ -5,6 +5,7 @@ import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/controllers/login_controller.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/facebook_auth_service.dart';
 import 'package:edu_app_flutter/services/google_auth_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/screens/signin_screen.dart';
@@ -96,6 +97,7 @@ class _LoginCard extends StatefulWidget {
 class _LoginCardState extends State<_LoginCard> {
   final LoginController _loginController = LoginController();
   final GoogleAuthService _googleAuthService = GoogleAuthService();
+  final FacebookAuthService _facebookAuthService = FacebookAuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
@@ -126,8 +128,10 @@ class _LoginCardState extends State<_LoginCard> {
       final successMessage = _loginController.response?.message.isNotEmpty == true
           ? _loginController.response!.message
           : (_loginController.googleResponse?.message.isNotEmpty == true
-              ? _loginController.googleResponse!.message
-              : 'Chao mung ban quay tro lai voi EduTeacher.');
+            ? _loginController.googleResponse!.message
+            : (_loginController.facebookResponse?.message.isNotEmpty == true
+              ? _loginController.facebookResponse!.message
+              : 'Chao mung ban quay tro lai voi EduTeacher.'));
 
       await AppNoticeModal.showSuccess(
         context,
@@ -192,12 +196,28 @@ class _LoginCardState extends State<_LoginCard> {
   }
 
   Future<void> _submitFacebookLogin() async {
-    await AppNoticeModal.show(
-      context,
-      type: AppNoticeType.info,
-      title: 'Facebook login',
-      message: 'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
-    );
+    try {
+      final profile = await _facebookAuthService.loginAndGetProfile();
+      if (!mounted || profile == null) {
+        return;
+      }
+
+      await _loginController.loginWithFacebookProfile(
+        uid: profile.uid,
+        displayName: profile.displayName,
+        photoUrl: profile.photoUrl,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showError(
+        context,
+        title: 'Facebook login that bai',
+        message: e.message,
+      );
+    }
   }
 
   @override

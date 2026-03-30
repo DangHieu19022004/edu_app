@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
+import 'package:edu_app_flutter/models/facebook_login_models.dart';
 import 'package:edu_app_flutter/models/form_login_models.dart';
 import 'package:edu_app_flutter/models/google_login_models.dart';
 import 'package:edu_app_flutter/models/form_register_models.dart';
@@ -160,6 +161,54 @@ class AuthService {
     );
 
     return googleLoginResponse;
+  }
+
+  Future<FacebookLoginResponse> loginByFacebookProfile(
+    FacebookLoginRequest request,
+  ) async {
+    final uri = Uri.parse(ApiConfig.endpoint(ApiEndpoints.usersFacebookLogin));
+
+    late final http.Response response;
+    try {
+      response = await _client
+          .post(
+            uri,
+            headers: const {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 15));
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Khong the ket noi toi server ($uri). Neu ban dang dung dien thoai that, hay chay app voi --dart-define=API_BASE_URL=http://<IP-may-tinh>:8000',
+      );
+    } on TimeoutException {
+      throw ApiException(
+        message: 'Ket noi server bi timeout. Vui long kiem tra backend va mang.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'Loi ket noi: ${e.message}');
+    }
+
+    final bodyMap = _decodeJsonMap(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        message: _extractErrorMessage(bodyMap),
+        statusCode: response.statusCode,
+      );
+    }
+
+    final facebookLoginResponse = FacebookLoginResponse.fromJson(bodyMap);
+
+    await AuthSession.instance.saveJwtSession(
+      tokens: facebookLoginResponse.tokens,
+      uid: facebookLoginResponse.user.uid,
+    );
+
+    return facebookLoginResponse;
   }
 
   Map<String, dynamic> _decodeJsonMap(String body) {
