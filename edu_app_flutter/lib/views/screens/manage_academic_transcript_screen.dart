@@ -1,5 +1,8 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/models/classroom_models.dart';
+import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/classroom_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
@@ -17,46 +20,13 @@ class ListHbaScreen extends StatefulWidget {
 class _ListHbaScreenState extends State<ListHbaScreen> {
   int _selectedClassIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final ClassroomService _classroomService = ClassroomService();
 
-  final List<String> _classTabs = ['12A3', '11A6', '10A5', '12C1', '9A2'];
-
-  final List<_StudentCardData> _students = const [
-    _StudentCardData(
-      name: 'Nguyễn Văn An',
-      birthday: '20/05/2007',
-      school: 'THPT EduTeacher',
-      avatar:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC0Ph2judfi_F8jWCzOU7mPe-6Dhbmj3Bd9IdmQ8o1UOKJDi56ert_EGM4Sdo0L3S3JtsZ_PdJUl99tbT7q6mrfMjmd25OBJpbhPJLGl6x2znykKC00_h_0-4i0-gJ4i_OS_gTDwsgEbTdJnGNRx7xpRiAbUb2Yl-Yf18GNPZyN2wd6PxCuzYvvoFzAwlzBjixHpcrnqmhRlEbJ8N1XV_PawrFnFWqus91L-GO0QbqvGiIlOQkP54DKqZlUv1ljWueN48l_qyBxj2Hy',
-      online: true,
-      tags: ['TO', 'LY', 'HOA'],
-    ),
-    _StudentCardData(
-      name: 'Trần Thị Bình',
-      birthday: '12/08/2007',
-      school: 'THPT EduTeacher',
-      avatar:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAGpNuCEYfmkyzzf9fbXOzAN2fu4gXVpeFXHriuzhTvRZfkoWKEmLwIaRPhyvIGJAr2qKAmZo34M_2VdsI4stTNWOBgDeEDDqna-Wy83G8tECthRYi6Rz40C18i2yAdT2EhVYKP6JH6K001bZUPC1FakzgxYYcDUXkNUUcAYbENgecSN8Ieqowdm453FnhTMPpbbuihcw0YV3OvmkAKba4O812Pw4iOULH8X8uawLSDERvxstpRvYUIf8aKlCa2wFgj2xTbMSxF3zNo',
-      online: true,
-      tags: ['VAN', 'ANH', 'SU'],
-    ),
-    _StudentCardData(
-      name: 'Lê Hoàng Cường',
-      birthday: '05/01/2007',
-      school: 'THPT EduTeacher',
-      avatar:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuA8_w04h3g2GltXxJraqVrdPJ6QWcD4lF-cbRxJiAdBf0i0c4wRV2XJjFFfXJ-aGYByNBb2BboaUptlhSbIJ093ykYrefjliLYpD1Me0v7RJA2ZG3x5JOMU3EgbcP1dkGgiENz5MbzM-pZbpxKM2XEcR8sd8S6SkLzuwp9n1-wulTDWsdZhj41ZR4FlEv-Y40oKD9jRQMTMTe_O1cpGudWihYCsTHpRvDo9r-k9CZpD2dMwUnSCTuF6xmM9eeRi-BC3IA2-p9jE-By-',
-      online: false,
-      tags: ['TIN', 'TOAN'],
-    ),
-    _StudentCardData(
-      name: 'Phạm Mỹ Duyên',
-      birthday: '29/11/2007',
-      school: 'THPT EduTeacher',
-      avatar:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuB7unOfnMKPJJOd16ZzszNO3k0VGeIkK5CYCUNHRfeJSMTLaTORleBtP7LetD10wrlqD8Q9Nz5GYSJodEVKEb6MKPvSelnRAE3ApqewQmjAbWjQJ-PVeWMVJlNYOum08Io2K-HV5r99GQJ9OLz1miSdRviZTuD3rNvR2IaVFlre9J1ITthg0oWKRd-PupQjZaUhR8rCkOU8F1QqW_pQBkpouPxLX_naCQv0vU5vi76OWMAibeMaZUABUsj_LPaE-tQnHoPRiXsEZYhA',
-      online: true,
-      tags: ['NHAC', 'ANH'],
-    ),
+  final List<String> _classTabs = [];
+  final List<_StudentCardData> _students = [];
+  final List<_StudentCardData> _placeholderStudents = const [
+    _StudentCardData.placeholder(),
+    _StudentCardData.placeholder(),
   ];
 
   @override
@@ -72,6 +42,8 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       if (query.isEmpty) return true;
       return student.name.toLowerCase().contains(query);
     }).toList();
+    final hasStudents = filtered.isNotEmpty;
+    final visibleStudents = hasStudents ? filtered : _placeholderStudents;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -128,14 +100,18 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                             mainAxisSpacing: 12,
                             childAspectRatio: 2.0,
                           ),
-                      itemCount: filtered.length + 1,
+                      itemCount: visibleStudents.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == filtered.length) {
+                        if (index == visibleStudents.length) {
                           return _buildAddCard();
                         }
                         return _StudentCard(
-                          student: filtered[index],
+                          student: visibleStudents[index],
+                          isPlaceholder: !hasStudents,
                           onView: () {
+                            if (!hasStudents) {
+                              return;
+                            }
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => const DetailHbaScreen(),
@@ -193,6 +169,44 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   }
 
   Widget _buildClassTabs() {
+    if (_classTabs.isEmpty) {
+      return Row(
+        children: [
+          Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9EEFA),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'Chua co lop',
+              style: TextStyle(
+                fontSize: AppFontSizes.dashboardBody,
+                fontWeight: FontWeight.w600,
+                color: AppColors.subtitle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: const Color(0xFFE9EEFA),
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: _openCreateClassroomForm,
+              child: const SizedBox(
+                width: 44,
+                height: 40,
+                child: Icon(Icons.add, color: AppColors.primary),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return SizedBox(
       height: 44,
       child: ListView.separated(
@@ -288,27 +302,77 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       return;
     }
 
-    setState(() {
-      _classTabs.add(result.className);
-      _selectedClassIndex = _classTabs.length - 1;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          'Da nhan thong tin lop ${result.className} (${result.schoolName} - ${result.schoolYear})',
+    try {
+      final response = await _classroomService.saveClassroom(
+        SaveClassroomRequest(
+          name: result.className,
+          schoolName: result.schoolName,
+          classYear: result.schoolYear,
         ),
-      ),
-    );
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        final existingIndex = _classTabs.indexOf(result.className);
+        if (existingIndex >= 0) {
+          _selectedClassIndex = existingIndex;
+        } else {
+          _classTabs.add(result.className);
+          _selectedClassIndex = _classTabs.length - 1;
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            response.message.isNotEmpty
+                ? response.message
+                : 'Da tao lop ${result.className} thanh cong',
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(e.message),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Co loi xay ra khi tao lop. Vui long thu lai.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+    }
   }
 }
 
 class _StudentCard extends StatelessWidget {
-  const _StudentCard({required this.student, required this.onView});
+  const _StudentCard({
+    required this.student,
+    required this.onView,
+    this.isPlaceholder = false,
+  });
 
   final _StudentCardData student;
   final VoidCallback onView;
+  final bool isPlaceholder;
 
   @override
   Widget build(BuildContext context) {
@@ -339,11 +403,28 @@ class _StudentCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0x331337EC), width: 1.4),
-                      image: DecorationImage(
-                        image: NetworkImage(student.avatar),
-                        fit: BoxFit.cover,
-                      ),
+                      color: const Color(0xFFEAF1FF),
                     ),
+                    child: student.avatar.isEmpty
+                        ? const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.primary,
+                            size: 30,
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              student.avatar,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) {
+                                return const Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.primary,
+                                  size: 30,
+                                );
+                              },
+                            ),
+                          ),
                   ),
                   Positioned(
                     right: -2,
@@ -431,14 +512,23 @@ class _StudentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _iconButton(icon: Icons.visibility_rounded, onTap: onView),
+              _iconButton(
+                icon: Icons.visibility_rounded,
+                onTap: onView,
+                disabled: isPlaceholder,
+              ),
               const SizedBox(width: 6),
-              _iconButton(icon: Icons.edit_rounded, onTap: () {}),
+              _iconButton(
+                icon: Icons.edit_rounded,
+                onTap: () {},
+                disabled: isPlaceholder,
+              ),
               const SizedBox(width: 6),
               _iconButton(
                 icon: Icons.delete_rounded,
                 onTap: () {},
                 danger: true,
+                disabled: isPlaceholder,
               ),
             ],
           ),
@@ -451,15 +541,18 @@ class _StudentCard extends StatelessWidget {
     required IconData icon,
     required VoidCallback onTap,
     bool danger = false,
+    bool disabled = false,
   }) {
     final bg = danger ? const Color(0xFFFEE2E2) : const Color(0xFFEFF4FF);
-    final fg = danger ? const Color(0xFFDC2626) : AppColors.primary;
+    final fg = disabled
+        ? const Color(0xFF9CA3AF)
+        : (danger ? const Color(0xFFDC2626) : AppColors.primary);
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
+        onTap: disabled ? null : onTap,
         child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 19, color: fg)),
       ),
     );
@@ -475,6 +568,14 @@ class _StudentCardData {
     required this.online,
     required this.tags,
   });
+
+  const _StudentCardData.placeholder()
+    : name = 'Hoc sinh',
+      birthday = '--/--/----',
+      school = 'Chua co truong',
+      avatar = '',
+      online = false,
+      tags = const ['MON'];
 
   final String name;
   final String birthday;
@@ -571,7 +672,7 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
                   if (text.isEmpty) {
                     return 'Vui long nhap nam hoc';
                   }
-                  if (!RegExp(r'^\d{4}\s*-\s*\d{4}4').hasMatch(text)) {
+                  if (!_isValidSchoolYear(text)) {
                     return 'Nam hoc dung dinh dang yyyy-yyyy';
                   }
                   return null;
@@ -651,5 +752,21 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
         schoolYear: _schoolYearController.text.trim(),
       ),
     );
+  }
+
+  bool _isValidSchoolYear(String input) {
+    final compact = input.replaceAll(' ', '');
+    final parts = compact.split('-');
+    if (parts.length != 2) {
+      return false;
+    }
+
+    final startYear = int.tryParse(parts[0]);
+    final endYear = int.tryParse(parts[1]);
+    if (startYear == null || endYear == null) {
+      return false;
+    }
+
+    return endYear == startYear + 1;
   }
 }

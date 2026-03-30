@@ -6,4 +6,5 @@ class ApiEndpoints {
   static const String usersFacebookLogin = '/users/facebooklogin/';
   static const String usersVerifyToken = '/users/verify-token/';
   static const String usersRefreshToken = '/users/refresh-token/';
+  static const String classroomSaveClassroom = '/classroom/save_classroom/';
 }
