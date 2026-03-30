@@ -1,7 +1,9 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
+import 'package:edu_app_flutter/views/widgets/app_user_avatar.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_activity_item.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_feature_card.dart';
 // import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_quick_action_chip.dart';
@@ -19,6 +21,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
+    final currentUser = AuthSession.instance.user;
+    final displayName = (currentUser?.fullName ?? '').trim();
+    final avatar = (currentUser?.avatar ?? '').trim();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -29,7 +35,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _DashboardHeroHeader(),
+                  _DashboardHeroHeader(
+                    displayName: displayName,
+                    avatar: avatar,
+                  ),
                   // _buildQuickActions(),
                   _buildFeaturesSection(),
                   _buildRecentActivitySection(),
@@ -230,7 +239,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _DashboardHeroHeader extends StatelessWidget {
-  const _DashboardHeroHeader();
+  const _DashboardHeroHeader({
+    required this.displayName,
+    required this.avatar,
+  });
+
+  final String displayName;
+  final String avatar;
 
   @override
   Widget build(BuildContext context) {
@@ -277,45 +292,27 @@ class _DashboardHeroHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.38),
-                        width: 1.3,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image.network(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuB3CY0AWwr3WS211jlqooxkPnwy4alV3Qtm_Ft_-oKFnmYE6EAbCxDwOiyTsLzzVTXQ3sIawryu6lfdtpHAvviqfHH2_g4LBPVKa0McQWwrKAYp8L-sYZEBmKX89_Th6C-V5CwM5jFs1oPAWULUHGSzFo-83fWE4N0DAiEAnd0Sz5jHoS4R0r0dpFFBk58bo91rB3Uw5_joFUrZc2XpWq5wTqnbjmjh6btEyUootue8BfxXg3Dp3KFmMm1pB-1bCI-H5Gexxt5RQh2x',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.person,
-                          color: AppColors.primary,
-                          size: 26,
-                        );
-                      },
-                    ),
+                  AppUserAvatar(
+                    avatar: avatar,
+                    size: 48,
+                    borderRadius: BorderRadius.circular(16),
+                    iconSize: 24,
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${AppTexts.dashboardGreeting} 👋',
-                          style: TextStyle(
+                          'Chao ${displayName.isEmpty ? 'ban' : displayName} 👋',
+                          style: const TextStyle(
                             fontSize: AppFontSizes.dashboardGreeting,
                             fontWeight: FontWeight.w800,
                             color: AppColors.white,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
+                        const SizedBox(height: 2),
+                        const Text(
                           AppTexts.dashboardSubGreeting,
                           style: TextStyle(
                             fontSize: AppFontSizes.dashboardBody,
@@ -346,11 +343,11 @@ class _DashboardHeroHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
                   boxShadow: const [
@@ -363,7 +360,11 @@ class _DashboardHeroHeader extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(AppIcons.search, color: AppColors.inputHint, size: 20),
+                    const Icon(
+                      AppIcons.search,
+                      color: AppColors.inputHint,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: TextField(
@@ -391,7 +392,11 @@ class _DashboardHeroHeader extends StatelessWidget {
                         color: AppColors.primary.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(AppIcons.tune, color: AppColors.primary, size: 18),
+                      child: const Icon(
+                        AppIcons.tune,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
                     ),
                   ],
                 ),

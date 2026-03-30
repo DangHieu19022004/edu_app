@@ -4,6 +4,7 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/views/screens/login_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_user_avatar.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,14 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final user = AuthSession.instance.user;
+    final displayName = (user?.fullName ?? '').trim();
+    final subtitle = (user?.email ?? '').trim().isNotEmpty
+        ? user!.email.trim()
+        : ((user?.phone ?? '').trim().isNotEmpty
+            ? user!.phone.trim()
+            : 'Chua cap nhat thong tin');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -135,13 +144,8 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuAxBED0k4qqelxi_cJy_ksyiYTNB7FklYiHkilHwF2_B4uIfvSI_lROsvcxTRUULI8VoVsTjW_jKTTB86FsT1vkpzjALt2MZCFvP-EEwb7SYoB_niBjwc_c1ejg25q96JEJzdVo18fjcEUczBJqaMl64clfLx5WwwyoEF0CCEDSXjQhS3-bHxRFQw-z0N4c5TcMAfddf3W3jdiGXSj-NBMO2Z6OB_DmRTaXZxmigYgzmraLunFwq9ijvyagt_rs3AWzEwnPFxWkVRkE',
-                      ),
-                      fit: BoxFit.cover,
-                    ),
                   ),
+                  child: AppUserAvatar(avatar: user?.avatar ?? '', size: 104),
                 ),
               ),
               Positioned(
@@ -160,8 +164,8 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Cô Lan',
+          Text(
+            displayName.isEmpty ? 'Nguoi dung' : displayName,
             style: TextStyle(
               color: AppColors.white,
               fontSize: 28,
@@ -169,8 +173,8 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          const Text(
-            'Trường Tiểu học Chu Văn An',
+          Text(
+            subtitle,
             style: TextStyle(
               color: Color(0xCCFFFFFF),
               fontSize: AppFontSizes.dashboardBody,

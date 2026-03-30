@@ -40,9 +40,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     final hasLocalSession = AuthSession.instance.isAuthenticated;
     var canKeepLogin = false;
+    debugPrint('[AuthStartup] hasLocalSession=$hasLocalSession uid=${AuthSession.instance.uid}');
 
     if (hasLocalSession) {
       canKeepLogin = await _authService.verifyToken();
+      debugPrint('[AuthStartup] verifyToken result=$canKeepLogin');
     }
 
     if (!mounted) {

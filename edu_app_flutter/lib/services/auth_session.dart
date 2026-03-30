@@ -1,4 +1,5 @@
 import 'package:edu_app_flutter/models/auth_tokens.dart';
+import 'package:edu_app_flutter/models/session_user.dart';
 import 'package:edu_app_flutter/services/auth_storage.dart';
 
 class AuthSession {
@@ -10,6 +11,7 @@ class AuthSession {
 
   AuthTokens? _tokens;
   String? _uid;
+  SessionUser? _user;
 
   bool get isAuthenticated {
     final token = _tokens?.accessToken ?? '';
@@ -19,6 +21,7 @@ class AuthSession {
   String? get accessToken => _tokens?.accessToken;
   String? get refreshToken => _tokens?.refreshToken;
   String? get uid => _uid;
+  SessionUser? get user => _user;
 
   void configureStorage(AuthStorage storage) {
     _storage = storage;
@@ -32,20 +35,37 @@ class AuthSession {
 
     _tokens = snapshot.tokens;
     _uid = snapshot.uid;
+    _user = snapshot.user;
   }
 
   Future<void> saveJwtSession({
     required AuthTokens tokens,
     required String uid,
+    SessionUser? user,
   }) async {
     _tokens = tokens;
     _uid = uid;
-    await _storage.saveSession(AuthSnapshot(tokens: tokens, uid: uid));
+
+    final currentUser = _user;
+    if (user != null && currentUser != null) {
+      _user = currentUser.mergePreferNonEmpty(user).copyWith(uid: uid);
+    } else if (user != null) {
+      _user = user.copyWith(uid: uid);
+    } else if (currentUser != null) {
+      _user = currentUser.copyWith(uid: uid);
+    } else {
+      _user = SessionUser.empty(uid: uid);
+    }
+
+    await _storage.saveSession(
+      AuthSnapshot(tokens: tokens, uid: uid, user: _user!),
+    );
   }
 
   Future<void> clear() async {
     _tokens = null;
     _uid = null;
+    _user = null;
     await _storage.clearSession();
   }
 

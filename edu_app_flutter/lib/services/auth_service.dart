@@ -10,8 +10,10 @@ import 'package:edu_app_flutter/models/facebook_login_models.dart';
 import 'package:edu_app_flutter/models/form_login_models.dart';
 import 'package:edu_app_flutter/models/google_login_models.dart';
 import 'package:edu_app_flutter/models/form_register_models.dart';
+import 'package:edu_app_flutter/models/session_user.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
@@ -61,6 +63,7 @@ class AuthService {
       await AuthSession.instance.saveJwtSession(
         tokens: registerResponse.tokens,
         uid: registerResponse.user.uid,
+        user: _toSessionUser(registerResponse.user),
       );
 
       return registerResponse;
@@ -115,6 +118,7 @@ class AuthService {
       await AuthSession.instance.saveJwtSession(
         tokens: loginResponse.tokens,
         uid: loginResponse.user.uid,
+        user: _toSessionUser(loginResponse.user),
       );
 
       return loginResponse;
@@ -165,6 +169,7 @@ class AuthService {
       await AuthSession.instance.saveJwtSession(
         tokens: googleLoginResponse.tokens,
         uid: googleLoginResponse.user.uid,
+        user: _toSessionUser(googleLoginResponse.user),
       );
 
       return googleLoginResponse;
@@ -215,6 +220,7 @@ class AuthService {
       await AuthSession.instance.saveJwtSession(
         tokens: facebookLoginResponse.tokens,
         uid: facebookLoginResponse.user.uid,
+        user: _toSessionUser(facebookLoginResponse.user),
       );
 
       return facebookLoginResponse;
@@ -225,6 +231,7 @@ class AuthService {
     return AppLoadingModel.instance.track(() async {
       final token = AuthSession.instance.accessToken;
       if (token == null || token.isEmpty) {
+        debugPrint('[AuthStartup] verifyToken skipped: no access token');
         return false;
       }
 
@@ -243,23 +250,32 @@ class AuthService {
             .timeout(const Duration(seconds: 15));
       } on SocketException {
         // Keep local session on transient network failures.
+        debugPrint('[AuthStartup] verifyToken socket error -> keep local session');
         return true;
       } on TimeoutException {
+        debugPrint('[AuthStartup] verifyToken timeout -> keep local session');
         return true;
       } on http.ClientException {
+        debugPrint('[AuthStartup] verifyToken client error -> keep local session');
         return true;
       }
 
+      debugPrint('[AuthStartup] verifyToken status=${response.statusCode}');
+
       if (response.statusCode == 401 && allowRefresh) {
+        debugPrint('[AuthStartup] verifyToken got 401 -> try refresh');
         final refreshed = await _refreshSessionTokens();
         if (!refreshed) {
+          debugPrint('[AuthStartup] refresh failed -> clear session');
           await AuthSession.instance.clear();
           return false;
         }
+        debugPrint('[AuthStartup] refresh success -> verify again');
         return verifyToken(allowRefresh: false);
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint('[AuthStartup] verifyToken non-2xx -> clear session');
         await AuthSession.instance.clear();
         return false;
       }
@@ -270,12 +286,11 @@ class AuthService {
 
       if (verifiedUid.isNotEmpty) {
         final refreshToken = AuthSession.instance.refreshToken ?? '';
-        if (refreshToken.isNotEmpty) {
-          await AuthSession.instance.saveJwtSession(
-            tokens: AuthTokens(accessToken: token, refreshToken: refreshToken),
-            uid: verifiedUid,
-          );
-        }
+        await AuthSession.instance.saveJwtSession(
+          tokens: AuthTokens(accessToken: token, refreshToken: refreshToken),
+          uid: verifiedUid,
+          user: SessionUser.fromJson(userMap),
+        );
       }
 
       return true;
@@ -285,6 +300,7 @@ class AuthService {
   Future<bool> _refreshSessionTokens() async {
     final refreshToken = AuthSession.instance.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
+      debugPrint('[AuthStartup] refresh skipped: no refresh token');
       return false;
     }
 
@@ -302,20 +318,25 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 15));
     } on SocketException {
+      debugPrint('[AuthStartup] refresh socket error');
       return false;
     } on TimeoutException {
+      debugPrint('[AuthStartup] refresh timeout');
       return false;
     } on http.ClientException {
+      debugPrint('[AuthStartup] refresh client error');
       return false;
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('[AuthStartup] refresh non-2xx status=${response.statusCode}');
       return false;
     }
 
     final bodyMap = _decodeJsonMap(response.body);
     final newTokens = AuthTokens.fromJson(bodyMap);
     if (!newTokens.isValid) {
+      debugPrint('[AuthStartup] refresh invalid token payload');
       return false;
     }
 
@@ -325,11 +346,30 @@ class AuthService {
     final uidToStore = refreshedUid.isNotEmpty ? refreshedUid : currentUid;
 
     if (uidToStore.isEmpty) {
+      debugPrint('[AuthStartup] refresh missing uid');
       return false;
     }
 
-    await AuthSession.instance.saveJwtSession(tokens: newTokens, uid: uidToStore);
+    final mergedUserMap = userMap.isNotEmpty
+        ? userMap
+        : (AuthSession.instance.user?.toJson() ?? <String, dynamic>{'uid': uidToStore});
+
+    await AuthSession.instance.saveJwtSession(
+      tokens: newTokens,
+      uid: uidToStore,
+      user: SessionUser.fromJson(mergedUserMap),
+    );
     return true;
+  }
+
+  SessionUser _toSessionUser(AuthUser user) {
+    return SessionUser(
+      uid: user.uid,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      avatar: user.avatar,
+    );
   }
 
   Map<String, dynamic> _decodeJsonMap(String body) {
