@@ -11,7 +11,11 @@ class AuthSession {
   AuthTokens? _tokens;
   String? _uid;
 
-  bool get isAuthenticated => _tokens?.isValid == true;
+  bool get isAuthenticated {
+    final token = _tokens?.accessToken ?? '';
+    final currentUid = _uid ?? '';
+    return token.isNotEmpty && currentUid.isNotEmpty;
+  }
   String? get accessToken => _tokens?.accessToken;
   String? get refreshToken => _tokens?.refreshToken;
   String? get uid => _uid;

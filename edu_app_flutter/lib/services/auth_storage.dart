@@ -56,16 +56,16 @@ class SecureAuthStorage implements AuthStorage {
     final refreshToken = await _storage.read(key: _keyRefreshToken);
     final uid = await _storage.read(key: _keyUid);
 
-    if (accessToken == null || refreshToken == null || uid == null) {
+    if (accessToken == null || uid == null) {
       return null;
     }
 
-    if (accessToken.isEmpty || refreshToken.isEmpty || uid.isEmpty) {
+    if (accessToken.isEmpty || uid.isEmpty) {
       return null;
     }
 
     return AuthSnapshot(
-      tokens: AuthTokens(accessToken: accessToken, refreshToken: refreshToken),
+      tokens: AuthTokens(accessToken: accessToken, refreshToken: refreshToken ?? ''),
       uid: uid,
     );
   }

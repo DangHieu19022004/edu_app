@@ -7,7 +7,8 @@ class AuthTokens {
   final String accessToken;
   final String refreshToken;
 
-  bool get isValid => accessToken.isNotEmpty && refreshToken.isNotEmpty;
+  bool get isValid => accessToken.isNotEmpty;
+  bool get hasRefreshToken => refreshToken.isNotEmpty;
 
   factory AuthTokens.fromJson(Map<String, dynamic> json) {
     return AuthTokens(
