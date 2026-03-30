@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:edu_app_flutter/services/auth_service.dart';
+import 'package:edu_app_flutter/services/auth_session.dart';
+import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:edu_app_flutter/views/screens/login_screen.dart';
 
@@ -15,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -28,13 +32,28 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Simulate splash loading and route to the next screen.
-    Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    });
+    _bootstrapAndNavigate();
+  }
+
+  Future<void> _bootstrapAndNavigate() async {
+    await Future<void>.delayed(const Duration(seconds: 2));
+
+    final hasLocalSession = AuthSession.instance.isAuthenticated;
+    var canKeepLogin = false;
+
+    if (hasLocalSession) {
+      canKeepLogin = await _authService.verifyToken();
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => canKeepLogin ? const DashboardScreen() : const LoginScreen(),
+      ),
+    );
   }
 
   @override

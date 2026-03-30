@@ -1,7 +1,12 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/services/auth_session.dart';
+import 'package:edu_app_flutter/views/screens/login_screen.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -58,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                             title: 'Điều khoản & Chính sách',
                           ),
                           const SizedBox(height: 16),
-                          _buildLogoutButton(),
+                          _buildLogoutButton(context),
                         ],
                       ),
                     ),
@@ -193,12 +198,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () => _handleLogout(context),
         style: OutlinedButton.styleFrom(
           backgroundColor: const Color(0xFFFFF1F2),
           side: const BorderSide(color: Color(0xFFFECACA)),
@@ -212,6 +217,37 @@ class ProfileScreen extends StatelessWidget {
         icon: const Icon(Icons.logout_rounded),
         label: const Text('Đăng xuất'),
       ),
+    );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    await AuthSession.instance.clear();
+
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {
+      // Ignore provider-specific errors during logout.
+    }
+
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {
+      // Ignore provider-specific errors during logout.
+    }
+
+    try {
+      await FacebookAuth.instance.logOut();
+    } catch (_) {
+      // Ignore provider-specific errors during logout.
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
     );
   }
 
