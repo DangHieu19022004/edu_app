@@ -13,7 +13,7 @@ def _get_credentials_path() -> Path:
             candidate = Path(__file__).resolve().parents[2] / candidate
         return candidate
 
-    return Path(__file__).resolve().parents[2] / "config" / "eduapp-437c1-firebase-adminsdk-fbsvc-b4a9afb46d.json"
+    return Path(__file__).resolve().parents[2] / "config" / "eduapp-437c1-firebase-adminsdk-fbsvc-7910212bcb.json"
 
 
 def _ensure_initialized() -> None:

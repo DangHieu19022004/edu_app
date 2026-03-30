@@ -136,6 +136,13 @@ def _hash_password(raw_password):
     return make_password(raw_password)
 
 
+def _normalize_email(value):
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    return normalized or None
+
+
 def _verify_and_upgrade_password(user, raw_password):
     stored_password = user.password_hash or ""
 
@@ -377,7 +384,7 @@ def facebook_login(request):
             defaults={
                 "full_name": full_name,
                 "avatar": avatar,
-                "email": "",
+                "email": None,
                 "phone": "",
                 "password_hash": "",
                 "fingerprint": "",
@@ -411,7 +418,7 @@ def google_login(request):
         # Xác thực token với Firebase
         decoded_token = verify_firebase_id_token(firebase_id_token)
         uid = decoded_token["uid"]
-        email = decoded_token.get("email")
+        email = _normalize_email(decoded_token.get("email"))
         full_name = decoded_token.get("name")
         avatar = decoded_token.get("picture")
         metadata = decoded_token.get("firebase", {}).get("sign_in_attributes", {})
