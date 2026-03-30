@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
@@ -221,34 +223,55 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
+    debugPrint('[Logout] Tap detected');
+
     await AuthSession.instance.clear();
+    debugPrint('[Logout] Local session cleared');
 
-    try {
-      await FirebaseAuth.instance.signOut();
-    } catch (_) {
-      // Ignore provider-specific errors during logout.
-    }
-
-    try {
-      await GoogleSignIn().signOut();
-    } catch (_) {
-      // Ignore provider-specific errors during logout.
-    }
-
-    try {
-      await FacebookAuth.instance.logOut();
-    } catch (_) {
-      // Ignore provider-specific errors during logout.
-    }
+    unawaited(_signOutProvidersInBackground());
 
     if (!context.mounted) {
       return;
     }
 
+    debugPrint('[Logout] Navigate to LoginScreen');
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
+  }
+
+  Future<void> _signOutProvidersInBackground() async {
+    await _safeSignOut(
+      label: 'FirebaseAuth',
+      action: () => FirebaseAuth.instance.signOut(),
+    );
+
+    await _safeSignOut(
+      label: 'GoogleSignIn',
+      action: () => GoogleSignIn().signOut(),
+    );
+
+    await _safeSignOut(
+      label: 'FacebookAuth',
+      action: () => FacebookAuth.instance.logOut(),
+    );
+
+    debugPrint('[Logout] Provider sign-out completed');
+  }
+
+  Future<void> _safeSignOut({
+    required String label,
+    required Future<void> Function() action,
+  }) async {
+    try {
+      await action().timeout(const Duration(seconds: 3));
+      debugPrint('[Logout] $label sign-out success');
+    } on TimeoutException {
+      debugPrint('[Logout] $label sign-out timeout');
+    } catch (e) {
+      debugPrint('[Logout] $label sign-out ignored error: $e');
+    }
   }
 
   Widget _headerIconButton({required IconData icon, required VoidCallback onTap}) {
