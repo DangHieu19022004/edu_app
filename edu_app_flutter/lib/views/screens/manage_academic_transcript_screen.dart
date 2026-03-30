@@ -4,8 +4,7 @@ import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/classroom_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
-import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
-import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
@@ -22,12 +21,15 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ClassroomService _classroomService = ClassroomService();
 
-  final List<String> _classTabs = [];
-  final List<_StudentCardData> _students = [];
-  final List<_StudentCardData> _placeholderStudents = const [
-    _StudentCardData.placeholder(),
-    _StudentCardData.placeholder(),
-  ];
+  final List<ClassroomItem> _classrooms = [];
+  final List<Map<String, dynamic>> _students = [];
+  bool _isLoadingClasses = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshClassrooms();
+  }
 
   @override
   void dispose() {
@@ -37,13 +39,12 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
     final filtered = _students.where((student) {
-      final query = _searchController.text.trim().toLowerCase();
       if (query.isEmpty) return true;
-      return student.name.toLowerCase().contains(query);
+      final name = (student['name'] ?? '').toString().toLowerCase();
+      return name.contains(query);
     }).toList();
-    final hasStudents = filtered.isNotEmpty;
-    final visibleStudents = hasStudents ? filtered : _placeholderStudents;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -91,36 +92,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                     const SizedBox(height: 14),
                     _buildClassTabs(),
                     const SizedBox(height: 14),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 1,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 2.0,
-                          ),
-                      itemCount: visibleStudents.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == visibleStudents.length) {
-                          return _buildAddCard();
-                        }
-                        return _StudentCard(
-                          student: visibleStudents[index],
-                          isPlaceholder: !hasStudents,
-                          onView: () {
-                            if (!hasStudents) {
-                              return;
-                            }
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const DetailHbaScreen(),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    if (filtered.isEmpty)
+                      _buildEmptyStudentState()
+                    else
+                      _buildSimpleStudentList(filtered),
                   ],
                 ),
               ),
@@ -169,7 +144,14 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   }
 
   Widget _buildClassTabs() {
-    if (_classTabs.isEmpty) {
+    if (_isLoadingClasses) {
+      return const SizedBox(
+        height: 44,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2.2)),
+      );
+    }
+
+    if (_classrooms.isEmpty) {
       return Row(
         children: [
           Container(
@@ -208,13 +190,13 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     }
 
     return SizedBox(
-      height: 44,
+      height: 56,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _classTabs.length + 1,
+        itemCount: _classrooms.length + 1,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          if (index == _classTabs.length) {
+          if (index == _classrooms.length) {
             return Material(
               color: const Color(0xFFE9EEFA),
               borderRadius: BorderRadius.circular(999),
@@ -223,6 +205,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                 onTap: _openCreateClassroomForm,
                 child: const SizedBox(
                   width: 44,
+                  height: 56,
                   child: Icon(Icons.add, color: AppColors.primary),
                 ),
               ),
@@ -230,6 +213,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
           }
 
           final selected = _selectedClassIndex == index;
+          final classroom = _classrooms[index];
           return Material(
             color: selected ? AppColors.primary : AppColors.white,
             borderRadius: BorderRadius.circular(999),
@@ -237,21 +221,37 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
               borderRadius: BorderRadius.circular(999),
               onTap: () => setState(() => _selectedClassIndex = index),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: selected ? Colors.transparent : const Color(0xFFD5DEEA),
                   ),
                 ),
-                child: Text(
-                  _classTabs[index],
-                  style: TextStyle(
-                    fontSize: AppFontSizes.dashboardChip,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? AppColors.white : AppColors.subtitle,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      classroom.name,
+                      style: TextStyle(
+                        fontSize: AppFontSizes.dashboardChip,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? AppColors.white : AppColors.subtitle,
+                      ),
+                    ),
+                    if (classroom.classYear.trim().isNotEmpty)
+                      Text(
+                        classroom.classYear,
+                        style: TextStyle(
+                          fontSize: AppFontSizes.dashboardTiny,
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? const Color(0xD9FFFFFF)
+                              : AppColors.inputHint,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -261,33 +261,62 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     );
   }
 
-  Widget _buildAddCard() {
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFC8D3E7), width: 1.4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        backgroundColor: const Color(0xFFF8FBFF),
+  Widget _buildEmptyStudentState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDCE5F4)),
       ),
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PreOcrScreen()),
-        );
-      },
       child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary, size: 30),
-          SizedBox(height: 6),
+          Icon(Icons.inbox_rounded, color: AppColors.inputHint, size: 34),
+          SizedBox(height: 10),
           Text(
-            'Thêm học sinh mới',
+            'Chưa có dữ liệu học sinh',
             style: TextStyle(
               fontSize: AppFontSizes.dashboardBody,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: AppColors.title,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Sẽ hiển thị danh sách khi tích hợp dữ liệu thật từ API.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppFontSizes.dashboardCaption,
+              fontWeight: FontWeight.w500,
+              color: AppColors.subtitle,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSimpleStudentList(List<Map<String, dynamic>> students) {
+    return Column(
+      children: students.map((student) {
+        final name = (student['name'] ?? '').toString();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFDCE5F4)),
+          ),
+          child: ListTile(
+            title: Text(
+              name.isEmpty ? 'Học sinh' : name,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -315,25 +344,18 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
         return;
       }
 
-      setState(() {
-        final existingIndex = _classTabs.indexOf(result.className);
-        if (existingIndex >= 0) {
-          _selectedClassIndex = existingIndex;
-        } else {
-          _classTabs.add(result.className);
-          _selectedClassIndex = _classTabs.length - 1;
-        }
-      });
+      await _refreshClassrooms(selectClassName: result.className);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            response.message.isNotEmpty
-                ? response.message
-                : 'Da tao lop ${result.className} thanh cong',
-          ),
-        ),
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Tao lop thanh cong',
+        message: response.message.isNotEmpty
+            ? response.message
+            : 'Da tao lop ${result.className} thanh cong',
       );
     } on ApiException catch (e) {
       if (!mounted) {
@@ -361,228 +383,70 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       );
     }
   }
-}
 
-class _StudentCard extends StatelessWidget {
-  const _StudentCard({
-    required this.student,
-    required this.onView,
-    this.isPlaceholder = false,
-  });
+  Future<void> _refreshClassrooms({String? selectClassName}) async {
+    if (!mounted) {
+      return;
+    }
 
-  final _StudentCardData student;
-  final VoidCallback onView;
-  final bool isPlaceholder;
+    setState(() {
+      _isLoadingClasses = true;
+    });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: Colors.white.withValues(alpha: 0.88),
-        border: Border.all(color: const Color(0xE6FFFFFF)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x110B1D47),
-            blurRadius: 14,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0x331337EC), width: 1.4),
-                      color: const Color(0xFFEAF1FF),
-                    ),
-                    child: student.avatar.isEmpty
-                        ? const Icon(
-                            Icons.person_rounded,
-                            color: AppColors.primary,
-                            size: 30,
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              student.avatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) {
-                                return const Icon(
-                                  Icons.person_rounded,
-                                  color: AppColors.primary,
-                                  size: 30,
-                                );
-                              },
-                            ),
-                          ),
-                  ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: student.online
-                            ? const Color(0xFF22C55E)
-                            : const Color(0xFF9CA3AF),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.white, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      student.name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Ngày sinh: ${student.birthday}',
-                      style: const TextStyle(
-                        fontSize: AppFontSizes.dashboardCaption,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.subtitle,
-                      ),
-                    ),
-                    Text(
-                      'Trường: ${student.school}',
-                      style: const TextStyle(
-                        fontSize: AppFontSizes.dashboardCaption,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.subtitle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFE9EEF7)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: student.tags
-                      .map(
-                        (tag) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: const Color(0xFFEAF1FF),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _iconButton(
-                icon: Icons.visibility_rounded,
-                onTap: onView,
-                disabled: isPlaceholder,
-              ),
-              const SizedBox(width: 6),
-              _iconButton(
-                icon: Icons.edit_rounded,
-                onTap: () {},
-                disabled: isPlaceholder,
-              ),
-              const SizedBox(width: 6),
-              _iconButton(
-                icon: Icons.delete_rounded,
-                onTap: () {},
-                danger: true,
-                disabled: isPlaceholder,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    try {
+      final classrooms = await _classroomService.getClassrooms();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _classrooms
+          ..clear()
+          ..addAll(classrooms);
+
+        if (_classrooms.isEmpty) {
+          _selectedClassIndex = 0;
+        } else if (selectClassName != null && selectClassName.trim().isNotEmpty) {
+          final targetIndex = _classrooms.indexWhere(
+            (item) => item.name == selectClassName,
+          );
+          _selectedClassIndex = targetIndex >= 0 ? targetIndex : 0;
+        } else if (_selectedClassIndex >= _classrooms.length) {
+          _selectedClassIndex = _classrooms.length - 1;
+        }
+      });
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(e.message),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Khong the tai danh sach lop. Vui long thu lai.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingClasses = false;
+        });
+      }
+    }
   }
-
-  Widget _iconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool danger = false,
-    bool disabled = false,
-  }) {
-    final bg = danger ? const Color(0xFFFEE2E2) : const Color(0xFFEFF4FF);
-    final fg = disabled
-        ? const Color(0xFF9CA3AF)
-        : (danger ? const Color(0xFFDC2626) : AppColors.primary);
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: disabled ? null : onTap,
-        child: SizedBox(width: 34, height: 34, child: Icon(icon, size: 19, color: fg)),
-      ),
-    );
-  }
-}
-
-class _StudentCardData {
-  const _StudentCardData({
-    required this.name,
-    required this.birthday,
-    required this.school,
-    required this.avatar,
-    required this.online,
-    required this.tags,
-  });
-
-  const _StudentCardData.placeholder()
-    : name = 'Hoc sinh',
-      birthday = '--/--/----',
-      school = 'Chua co truong',
-      avatar = '',
-      online = false,
-      tags = const ['MON'];
-
-  final String name;
-  final String birthday;
-  final String school;
-  final String avatar;
-  final bool online;
-  final List<String> tags;
 }
 
 class _CreateClassroomFormData {

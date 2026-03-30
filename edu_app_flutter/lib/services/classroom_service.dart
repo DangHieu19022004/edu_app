@@ -64,6 +64,71 @@ class ClassroomService {
     });
   }
 
+  Future<List<ClassroomItem>> getClassrooms() async {
+    return AppLoadingModel.instance.track(() async {
+      final uid = (AuthSession.instance.uid ?? '').trim();
+      if (uid.isEmpty) {
+        throw const ApiException(
+          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        );
+      }
+
+      final base = Uri.parse(ApiConfig.endpoint(ApiEndpoints.classroomGetClassrooms));
+      final uri = base.replace(
+        queryParameters: {
+          ...base.queryParameters,
+          'teacher_id': uid,
+        },
+      );
+
+      late final http.Response response;
+      try {
+        response = await _client.get(uri).timeout(const Duration(seconds: 15));
+      } on SocketException {
+        throw ApiException(
+          message:
+              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        );
+      } on TimeoutException {
+        throw const ApiException(
+          message: 'Ket noi server bi timeout. Vui long thu lai.',
+        );
+      } on http.ClientException catch (e) {
+        throw ApiException(message: 'Loi ket noi: ${e.message}');
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final bodyMap = _decodeJsonMap(response.body);
+        throw ApiException(
+          message: _extractErrorMessage(bodyMap),
+          statusCode: response.statusCode,
+        );
+      }
+
+      final decoded = response.body.trim().isEmpty ? const [] : jsonDecode(response.body);
+
+      if (decoded is List) {
+        return decoded
+            .whereType<Map<String, dynamic>>()
+            .map(ClassroomItem.fromJson)
+            .toList();
+      }
+
+      if (decoded is Map<String, dynamic>) {
+        final candidate = decoded['classrooms'];
+        if (candidate is List) {
+          return candidate
+              .whereType<Map<String, dynamic>>()
+              .map(ClassroomItem.fromJson)
+              .toList();
+        }
+        return const <ClassroomItem>[];
+      }
+
+      throw const ApiException(message: 'Invalid response format from server');
+    });
+  }
+
   Map<String, dynamic> _decodeJsonMap(String body) {
     if (body.trim().isEmpty) {
       return <String, dynamic>{};
