@@ -22,8 +22,9 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   final ClassroomService _classroomService = ClassroomService();
 
   final List<ClassroomItem> _classrooms = [];
-  final List<Map<String, dynamic>> _students = [];
+  final List<StudentInClassItem> _students = [];
   bool _isLoadingClasses = false;
+  bool _isLoadingStudents = false;
 
   @override
   void initState() {
@@ -42,8 +43,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     final query = _searchController.text.trim().toLowerCase();
     final filtered = _students.where((student) {
       if (query.isEmpty) return true;
-      final name = (student['name'] ?? '').toString().toLowerCase();
-      return name.contains(query);
+      return student.name.toLowerCase().contains(query);
     }).toList();
 
     return Scaffold(
@@ -92,10 +92,17 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                     const SizedBox(height: 14),
                     _buildClassTabs(),
                     const SizedBox(height: 14),
-                    if (filtered.isEmpty)
+                    if (_isLoadingStudents)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        ),
+                      )
+                    else if (filtered.isEmpty)
                       _buildEmptyStudentState()
                     else
-                      _buildSimpleStudentList(filtered),
+                      _buildStudentCards(filtered),
                   ],
                 ),
               ),
@@ -219,7 +226,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
             borderRadius: BorderRadius.circular(999),
             child: InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: () => setState(() => _selectedClassIndex = index),
+              onTap: () {
+                setState(() => _selectedClassIndex = index);
+                _refreshStudentsForSelectedClass();
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                 decoration: BoxDecoration(
@@ -284,7 +294,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
           ),
           SizedBox(height: 4),
           Text(
-            'Sẽ hiển thị danh sách khi tích hợp dữ liệu thật từ API.',
+            'Danh sach hoc sinh trống',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
@@ -297,26 +307,63 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     );
   }
 
-  Widget _buildSimpleStudentList(List<Map<String, dynamic>> students) {
+  Widget _buildStudentCards(List<StudentInClassItem> students) {
     return Column(
       children: students.map((student) {
-        final name = (student['name'] ?? '').toString();
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFFDCE5F4)),
           ),
-          child: ListTile(
-            title: Text(
-              name.isEmpty ? 'Học sinh' : name,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            trailing: const Icon(Icons.chevron_right_rounded),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                student.name.isEmpty ? 'Hoc sinh' : student.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.title,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _infoRow('Gioi tinh', student.gender),
+              _infoRow('Ngay sinh', student.dob),
+              _infoRow('Dien thoai', student.phone),
+              _infoRow('Truong', student.school),
+            ],
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    final normalized = value.trim().isEmpty ? '--' : value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: AppFontSizes.dashboardCaption,
+            color: AppColors.subtitle,
+            fontWeight: FontWeight.w500,
+          ),
+          children: [
+            TextSpan(text: '$label: '),
+            TextSpan(
+              text: normalized,
+              style: const TextStyle(
+                color: AppColors.title,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -415,6 +462,8 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
           _selectedClassIndex = _classrooms.length - 1;
         }
       });
+
+      await _refreshStudentsForSelectedClass();
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -443,6 +492,69 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       if (mounted) {
         setState(() {
           _isLoadingClasses = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshStudentsForSelectedClass() async {
+    if (!mounted) {
+      return;
+    }
+
+    if (_classrooms.isEmpty || _selectedClassIndex >= _classrooms.length) {
+      setState(() {
+        _students.clear();
+        _isLoadingStudents = false;
+      });
+      return;
+    }
+
+    final classId = _classrooms[_selectedClassIndex].id;
+
+    setState(() {
+      _isLoadingStudents = true;
+    });
+
+    try {
+      final students = await _classroomService.getStudentsByClass(classId: classId);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _students
+          ..clear()
+          ..addAll(students);
+      });
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(e.message),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Khong the tai danh sach hoc sinh. Vui long thu lai.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingStudents = false;
         });
       }
     }

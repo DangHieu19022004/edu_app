@@ -8,4 +8,5 @@ class ApiEndpoints {
   static const String usersRefreshToken = '/users/refresh-token/';
   static const String classroomSaveClassroom = '/classroom/save_classroom/';
   static const String classroomGetClassrooms = '/classroom/get_classrooms/';
+  static const String classroomGetStudentsByClass = '/classroom/get_students_by_class/';
 }

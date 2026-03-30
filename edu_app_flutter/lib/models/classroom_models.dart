@@ -57,3 +57,41 @@ class ClassroomItem {
     );
   }
 }
+
+class StudentInClassItem {
+  const StudentInClassItem({
+    required this.id,
+    required this.name,
+    required this.gender,
+    required this.dob,
+    required this.phone,
+    required this.school,
+    required this.academicPerformance,
+    required this.conduct,
+    required this.transcript,
+  });
+
+  final String id;
+  final String name;
+  final String gender;
+  final String dob;
+  final String phone;
+  final String school;
+  final String academicPerformance;
+  final String conduct;
+  final String transcript;
+
+  factory StudentInClassItem.fromJson(Map<String, dynamic> json) {
+    return StudentInClassItem(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      gender: (json['gender'] ?? '').toString(),
+      dob: (json['dob'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString(),
+      school: (json['school'] ?? '').toString(),
+      academicPerformance: (json['academicPerformance'] ?? '').toString(),
+      conduct: (json['conduct'] ?? '').toString(),
+      transcript: (json['transcript'] ?? '').toString(),
+    );
+  }
+}
