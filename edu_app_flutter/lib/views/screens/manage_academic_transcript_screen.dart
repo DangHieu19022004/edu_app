@@ -18,7 +18,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   int _selectedClassIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _classTabs = const ['12A3', '11A6', '10A5', '12C1', '9A2'];
+  final List<String> _classTabs = ['12A3', '11A6', '10A5', '12C1', '9A2'];
 
   final List<_StudentCardData> _students = const [
     _StudentCardData(
@@ -155,11 +155,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PreOcrScreen()),
-          );
-        },
+        onPressed: _openCreateClassroomForm,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, size: 28),
       ),
@@ -210,7 +206,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
               borderRadius: BorderRadius.circular(999),
               child: InkWell(
                 borderRadius: BorderRadius.circular(999),
-                onTap: () {},
+                onTap: _openCreateClassroomForm,
                 child: const SizedBox(
                   width: 44,
                   child: Icon(Icons.add, color: AppColors.primary),
@@ -277,6 +273,32 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openCreateClassroomForm() async {
+    final result = await showDialog<_CreateClassroomFormData>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => const _CreateClassroomDialog(),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _classTabs.add(result.className);
+      _selectedClassIndex = _classTabs.length - 1;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Da nhan thong tin lop ${result.className} (${result.schoolName} - ${result.schoolYear})',
+        ),
       ),
     );
   }
@@ -460,4 +482,174 @@ class _StudentCardData {
   final String avatar;
   final bool online;
   final List<String> tags;
+}
+
+class _CreateClassroomFormData {
+  const _CreateClassroomFormData({
+    required this.className,
+    required this.schoolName,
+    required this.schoolYear,
+  });
+
+  final String className;
+  final String schoolName;
+  final String schoolYear;
+}
+
+class _CreateClassroomDialog extends StatefulWidget {
+  const _CreateClassroomDialog();
+
+  @override
+  State<_CreateClassroomDialog> createState() => _CreateClassroomDialogState();
+}
+
+class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _classNameController = TextEditingController();
+  final TextEditingController _schoolNameController = TextEditingController();
+  final TextEditingController _schoolYearController = TextEditingController();
+
+  @override
+  void dispose() {
+    _classNameController.dispose();
+    _schoolNameController.dispose();
+    _schoolYearController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Tao lop hoc',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.title,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Dong form',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildInput(
+                controller: _classNameController,
+                label: 'Ten lop',
+                hint: 'Vi du: 10A1',
+              ),
+              const SizedBox(height: 10),
+              _buildInput(
+                controller: _schoolNameController,
+                label: 'Ten truong',
+                hint: 'Vi du: THPT EduTeacher',
+              ),
+              const SizedBox(height: 10),
+              _buildInput(
+                controller: _schoolYearController,
+                label: 'Nam hoc',
+                hint: 'Vi du: 2025-2026',
+                validator: (value) {
+                  final text = (value ?? '').trim();
+                  if (text.isEmpty) {
+                    return 'Vui long nhap nam hoc';
+                  }
+                  if (!RegExp(r'^\d{4}\s*-\s*\d{4}4').hasMatch(text)) {
+                    return 'Nam hoc dung dinh dang yyyy-yyyy';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Xac nhan',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.dashboardBody,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInput({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator ??
+          (value) {
+            if ((value ?? '').trim().isEmpty) {
+              return 'Vui long nhap $label';
+            }
+            return null;
+          },
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFF6F8FF),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _CreateClassroomFormData(
+        className: _classNameController.text.trim(),
+        schoolName: _schoolNameController.text.trim(),
+        schoolYear: _schoolYearController.text.trim(),
+      ),
+    );
+  }
 }
