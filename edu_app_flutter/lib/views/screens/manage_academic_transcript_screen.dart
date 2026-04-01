@@ -231,36 +231,58 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                 _refreshStudentsForSelectedClass();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: selected ? Colors.transparent : const Color(0xFFD5DEEA),
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      classroom.name,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.dashboardChip,
-                        fontWeight: FontWeight.w700,
-                        color: selected ? AppColors.white : AppColors.subtitle,
-                      ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          classroom.name,
+                          style: TextStyle(
+                            fontSize: AppFontSizes.dashboardChip,
+                            fontWeight: FontWeight.w700,
+                            color: selected ? AppColors.white : AppColors.subtitle,
+                          ),
+                        ),
+                        if (classroom.classYear.trim().isNotEmpty)
+                          Text(
+                            classroom.classYear,
+                            style: TextStyle(
+                              fontSize: AppFontSizes.dashboardTiny,
+                              fontWeight: FontWeight.w600,
+                              color: selected
+                                  ? const Color(0xD9FFFFFF)
+                                  : AppColors.inputHint,
+                            ),
+                          ),
+                      ],
                     ),
-                    if (classroom.classYear.trim().isNotEmpty)
-                      Text(
-                        classroom.classYear,
-                        style: TextStyle(
-                          fontSize: AppFontSizes.dashboardTiny,
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(width: 6),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(999),
+                      onTap: () async {
+                        await _confirmAndDeleteClassroom(classroom);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 16,
                           color: selected
-                              ? const Color(0xD9FFFFFF)
-                              : AppColors.inputHint,
+                              ? const Color(0xE6FFFFFF)
+                              : const Color(0xFFDC2626),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -268,6 +290,83 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _confirmAndDeleteClassroom(ClassroomItem classroom) async {
+    final shouldDelete = await _showDeleteClassroomConfirm(classroom.name);
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+
+    try {
+      final message = await _classroomService.deleteClassroom(classId: classroom.id);
+      if (!mounted) {
+        return;
+      }
+
+      await _refreshClassrooms();
+
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Xoa lop thanh cong',
+        message: message,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(e.message),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Khong the xoa lop. Vui long thu lai.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+    }
+  }
+
+  Future<bool?> _showDeleteClassroomConfirm(String className) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Xac nhan xoa lop'),
+          content: Text(
+            'Ban co chac chan muon xoa lop ${className.trim().isEmpty ? '' : className}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Huy'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Xoa'),
+            ),
+          ],
+        );
+      },
     );
   }
 

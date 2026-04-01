@@ -194,6 +194,69 @@ class ClassroomService {
     });
   }
 
+  Future<String> deleteClassroom({required String classId}) async {
+    return AppLoadingModel.instance.track(() async {
+      final uid = (AuthSession.instance.uid ?? '').trim();
+      if (uid.isEmpty) {
+        throw const ApiException(
+          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        );
+      }
+
+      final trimmedClassId = classId.trim();
+      if (trimmedClassId.isEmpty) {
+        throw const ApiException(message: 'Khong tim thay lop can xoa.');
+      }
+
+      final base = Uri.parse(ApiConfig.endpoint(ApiEndpoints.classroomDeleteClassroom));
+      final uri = base.replace(
+        queryParameters: {
+          ...base.queryParameters,
+          'id': trimmedClassId,
+        },
+      );
+
+      late final http.Response response;
+      try {
+        response = await _client
+            .delete(
+              uri,
+              headers: {
+                'Authorization': 'Bearer $uid',
+              },
+            )
+            .timeout(const Duration(seconds: 15));
+      } on SocketException {
+        throw ApiException(
+          message:
+              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        );
+      } on TimeoutException {
+        throw const ApiException(
+          message: 'Ket noi server bi timeout. Vui long thu lai.',
+        );
+      } on http.ClientException catch (e) {
+        throw ApiException(message: 'Loi ket noi: ${e.message}');
+      }
+
+      final bodyMap = _decodeJsonMap(response.body);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          message: _extractErrorMessage(bodyMap),
+          statusCode: response.statusCode,
+        );
+      }
+
+      final message = (bodyMap['message'] ?? '').toString().trim();
+      if (message.isNotEmpty) {
+        return message;
+      }
+
+      return 'Xoa lop thanh cong';
+    });
+  }
+
   Map<String, dynamic> _decodeJsonMap(String body) {
     if (body.trim().isEmpty) {
       return <String, dynamic>{};
