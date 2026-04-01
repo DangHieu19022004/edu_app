@@ -20,6 +20,7 @@ from PIL import Image
 from apps.classroom.models import Class
 import base64
 import os, time
+import traceback
 
 OCR_APP_DIR = os.path.dirname(os.path.abspath(__file__))
 YOLO_REPORT_CARD_WEIGHTS = os.path.join(OCR_APP_DIR, "runs", "detect", "train10", "weights", "best.pt")
@@ -34,7 +35,12 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
+CROPPED_ROOT_DIR = os.path.join(settings.MEDIA_ROOT, "cropped")
+
 def cleanup_cropped_dir(base_dir, max_age_minutes=15):
+    if not os.path.exists(base_dir):
+        return
+
     now = time.time()
     for folder in os.listdir(base_dir):
         folder_path = os.path.join(base_dir, folder)
@@ -366,6 +372,8 @@ def get_full_report_card(request):
     except StudentInfo.DoesNotExist:
         return JsonResponse({'error': 'Student not found'}, status=404)
     except Exception as e:
+        print("❌ detect() error:")
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -485,6 +493,15 @@ def correct_text_with_bart(text):
         return text
 
 
+def run_ocr(crop_path):
+    """Run OCR across PaddleOCR versions without version-specific kwargs."""
+    try:
+        return ocr_model.ocr(crop_path)
+    except TypeError:
+        # Newer PaddleOCR versions may expose predict() behavior via ocr().
+        return ocr_model.predict(crop_path)
+
+
 
 @csrf_exempt
 def detect(request):
@@ -507,9 +524,10 @@ def detect(request):
         # Chạy YOLO
         results = model(temp_image_path)[0]
         img = cv2.imread(temp_image_path)
-        cleanup_cropped_dir(os.path.join(settings.MEDIA_ROOT, "cropped"))
+        os.makedirs(CROPPED_ROOT_DIR, exist_ok=True)
+        cleanup_cropped_dir(CROPPED_ROOT_DIR)
 
-        cropped_dir = os.path.join(settings.MEDIA_ROOT, "cropped", uuid.uuid4().hex[:6])
+        cropped_dir = os.path.join(CROPPED_ROOT_DIR, uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
 
         response_data = []
@@ -522,10 +540,15 @@ def detect(request):
             cv2.imwrite(crop_path, crop)
 
             # OCR
-            ocr_result = ocr_model.ocr(crop_path, det=True, rec=True, cls=False)
+            ocr_result = run_ocr(crop_path)
+            print(
+                f"🔎 OCR raw result [{image_type}] crop_{i}: "
+                f"{json.dumps(ocr_result, ensure_ascii=False, default=str)[:1500]}"
+            )
 
             if image_type == 'report_card':
                 text_data = extract_report_card_from_ocr_result(ocr_result)
+                print(f"✅ OCR parsed report_card crop_{i}: {json.dumps(text_data, ensure_ascii=False)}")
                 result_entry = {
                     "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
                     "ocr_data": text_data,
@@ -533,6 +556,7 @@ def detect(request):
                 }
             else:
                 info_data = extract_student_info_from_image(crop_path)
+                print(f"✅ OCR parsed student_info crop_{i}: {json.dumps(info_data, ensure_ascii=False)}")
 
                 result_entry = {
                     "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
@@ -554,16 +578,69 @@ def detect(request):
 
 
 def extract_report_card_from_ocr_result(ocr_result):
+    def _safe_text(raw_text):
+        if raw_text is None:
+            return ""
+
+        if isinstance(raw_text, str):
+            return raw_text.strip()
+
+        if isinstance(raw_text, (list, tuple)):
+            if not raw_text:
+                return ""
+            return str(raw_text[0]).strip()
+
+        return str(raw_text).strip()
+
+    def _safe_box_metrics(box):
+        try:
+            if box is None or len(box) < 3:
+                return None
+            x_center = (box[0][0] + box[2][0]) / 2
+            y_center = (box[0][1] + box[2][1]) / 2
+            height = abs(box[0][1] - box[2][1])
+            return x_center, y_center, height
+        except Exception:
+            return None
+
     rows = []
-    for line in ocr_result[0]:
-        box = line[0]
-        text = line[1][0].strip()
-        if not text:
-            continue
-        x_center = (box[0][0] + box[2][0]) / 2
-        y_center = (box[0][1] + box[2][1]) / 2
-        height = abs(box[0][1] - box[2][1])
-        rows.append([y_center, x_center, text, box, height])
+    if not ocr_result:
+        return []
+
+    first = ocr_result[0]
+
+    # Legacy format: [ [ [box], [text, score] ], ... ]
+    if isinstance(first, list):
+        for line in first:
+            if not line or len(line) < 2:
+                continue
+            box = line[0]
+            text = _safe_text(line[1])
+            if not text:
+                continue
+            metrics = _safe_box_metrics(box)
+            if not metrics:
+                continue
+            x_center, y_center, height = metrics
+            rows.append([y_center, x_center, text, box, height])
+
+    # Newer format: [{"rec_texts": [...], "dt_polys": [...]}]
+    elif isinstance(first, dict):
+        rec_texts = first.get("rec_texts") or []
+        dt_polys = first.get("dt_polys") or []
+
+        for box, text in zip(dt_polys, rec_texts):
+            text = _safe_text(text)
+            if not text:
+                continue
+            metrics = _safe_box_metrics(box)
+            if not metrics:
+                continue
+            x_center, y_center, height = metrics
+            rows.append([y_center, x_center, text, box, height])
+
+    if not rows:
+        return []
 
     rows.sort(key=lambda r: r[0])
     avg_height = np.mean([r[4] for r in rows])
