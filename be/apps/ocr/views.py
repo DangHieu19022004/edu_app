@@ -48,7 +48,7 @@ def cleanup_cropped_dir(base_dir, max_age_minutes=15):
                 except Exception as e:
                     print(f"⚠️ Không thể xoá {folder_path}: {e}")
 
-BART_SERVER_URL = "http://34.69.155.77:8001/correct"
+BART_SERVER_URL = os.getenv("BART_SERVER_URL", "http://127.0.0.1:8001/correct")
 
 
 def _subject_value(subject, field_name, default=None):
