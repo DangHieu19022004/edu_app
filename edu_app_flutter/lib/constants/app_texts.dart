@@ -70,6 +70,15 @@ class AppTexts {
   static const String preOcrEmptyHint =
       'Chưa có ảnh nào. Hãy chọn ảnh hoặc chụp ảnh để tiếp tục.';
   static const String preOcrConfirm = 'Xác nhận';
+    static const String preOcrGuideTitle = 'Hướng dẫn chụp và chọn ảnh';
+    static const String preOcrGuideBody =
+      '1. Chụp đủ sáng, không bóng mờ, không nghiêng ảnh.\n'
+      '2. Chụp trọn trang học bạ và không cắt mất thông tin.\n'
+      '3. Chọn đúng nhãn ảnh trước khi bấm Xác nhận.';
+    static const String preOcrTapToPreview = 'Nhấn vào ảnh để xem toàn bộ';
+    static const String preOcrImageLabel = 'Chọn nhãn ảnh';
+    static const String preOcrExitPreview = 'Thoát xem ảnh';
+    static const String preOcrPreviewHint = 'Phóng to/thu nhỏ để kiểm tra độ rõ';
 
   // ------------------------------
   // OCR Screen
@@ -80,9 +89,10 @@ class AppTexts {
   static const String ocrProgressLabel = 'Đang trích xuất dữ liệu (OCR)...';
   static const String ocrResultTitle = 'Kết quả trích xuất';
   static const String ocrStudentName = 'Họ và tên học sinh';
+  static const String ocrGender = 'Giới tính';
+  static const String ocrDateOfBirth = 'Ngày sinh';
   static const String ocrClass = 'Lớp';
   static const String ocrSemester = 'Học kỳ';
-  static const String ocrAverageScore = 'Điểm trung bình môn';
 
     // ------------------------------
     // Detail HBA Screen

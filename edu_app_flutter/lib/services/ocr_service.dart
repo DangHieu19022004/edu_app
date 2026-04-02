@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
 import 'package:edu_app_flutter/models/app_loading_model.dart';
+import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,28 +13,32 @@ class OcrService {
   OcrService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
-  static const Duration _detectTimeout = Duration(seconds: 180);
+  static const Duration _detectTimeout = Duration(seconds: 360);
 
-  Future<List<Map<String, dynamic>>> detectReportCard({
-    required List<String> imagePaths,
+  Future<List<OcrDetectResult>> detectReportCard({
+    required List<OcrDetectImageInput> images,
   }) async {
     return AppLoadingModel.instance.track(() async {
-      if (imagePaths.isEmpty) {
-        return const <Map<String, dynamic>>[];
+      if (images.isEmpty) {
+        return const <OcrDetectResult>[];
       }
 
       final uri = Uri.parse(ApiConfig.endpoint(ApiEndpoints.ocrDetect));
-      final List<Map<String, dynamic>> allResults = <Map<String, dynamic>>[];
+      final List<OcrDetectResult> allResults = <OcrDetectResult>[];
 
-      for (final path in imagePaths) {
-        final file = File(path);
+      for (final input in images) {
+        final file = File(input.path);
         if (!file.existsSync()) {
           continue;
         }
 
         final request = http.MultipartRequest('POST', uri)
-          ..fields['image_type'] = 'report_card'
-          ..files.add(await http.MultipartFile.fromPath('image', path));
+          ..files.add(await http.MultipartFile.fromPath('image', input.path));
+
+        final imageType = input.imageType;
+        if (imageType != null && imageType.isNotEmpty) {
+          request.fields['image_type'] = imageType;
+        }
 
         late final http.StreamedResponse streamed;
         try {
@@ -58,7 +63,12 @@ class OcrService {
 
           final dynamic rawResults = bodyMap['results'];
           if (rawResults is List) {
-            allResults.addAll(rawResults.whereType<Map<String, dynamic>>());
+            allResults.addAll(
+              rawResults
+                  .whereType<Map<String, dynamic>>()
+                  .map(OcrDetectResult.fromJson)
+                  .map((item) => item.copyWith(role: input.role)),
+            );
           }
         } on SocketException {
           throw ApiException(
@@ -68,7 +78,7 @@ class OcrService {
         } on TimeoutException {
           throw const ApiException(
             message:
-                'OCR dang xu ly anh lon nen can nhieu thoi gian. Da timeout sau 180 giay, vui long thu lai voi mang on dinh.',
+                'OCR dang xu ly anh lon nen can nhieu thoi gian. Da timeout sau 360 giay, vui long thu lai voi mang on dinh.',
           );
         } on http.ClientException catch (e) {
           throw ApiException(message: 'Loi ket noi: ${e.message}');

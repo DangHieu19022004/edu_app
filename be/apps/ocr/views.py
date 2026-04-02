@@ -22,18 +22,29 @@ import base64
 import os, time
 import traceback
 
+BART_SERVER_URL = os.getenv("BART_SERVER_URL", "http://127.0.0.1:8001/correct")
 OCR_APP_DIR = os.path.dirname(os.path.abspath(__file__))
 YOLO_REPORT_CARD_WEIGHTS = os.path.join(OCR_APP_DIR, "runs", "detect", "train10", "weights", "best.pt")
-YOLO_INFO_WEIGHTS = os.path.join(OCR_APP_DIR, "runs", "detect", "train5", "weights", "best.pt")
 
 yolo_model = YOLO(YOLO_REPORT_CARD_WEIGHTS)
-yolo_infor = YOLO(YOLO_INFO_WEIGHTS)
 OCR_DEVICE = os.getenv("OCR_DEVICE", "cpu")
-ocr_model = PaddleOCR(lang='vi', device=OCR_DEVICE)
+# Try to disable extra doc preprocessing to keep OCR behavior closer to legacy flow.
+try:
+    ocr_model = PaddleOCR(
+        lang='vi',
+        device=OCR_DEVICE,
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+    )
+except TypeError as e:
+    print(f"⚠️ PaddleOCR init without doc preprocessing is not supported: {e}")
+    ocr_model = PaddleOCR(lang='vi', device=OCR_DEVICE)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# GEMINI_API_KEY =  ""
+
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
+gemini_model = genai.GenerativeModel("models/gemini-2.5-flash")
 
 CROPPED_ROOT_DIR = os.path.join(settings.MEDIA_ROOT, "cropped")
 
@@ -53,9 +64,6 @@ def cleanup_cropped_dir(base_dir, max_age_minutes=15):
                     print(f"🧹 Đã xoá thư mục cũ: {folder_path}")
                 except Exception as e:
                     print(f"⚠️ Không thể xoá {folder_path}: {e}")
-
-BART_SERVER_URL = os.getenv("BART_SERVER_URL", "http://127.0.0.1:8001/correct")
-
 
 def _subject_value(subject, field_name, default=None):
     if isinstance(subject, dict):
@@ -480,13 +488,23 @@ def save_full_report_card(request):
 
 
 def correct_text_with_bart(text):
+    endpoints = [BART_SERVER_URL]
+    if not BART_SERVER_URL.rstrip("/").endswith("/correct"):
+        endpoints.append(BART_SERVER_URL.rstrip("/") + "/correct")
+
     try:
-        response = requests.post(BART_SERVER_URL, json={"text": text})
-        if response.status_code == 200:
-            result = response.json().get("corrected", text)
-            print(f"✅ BART sửa: '{text}' ➜ '{result}'")
-            return result
-        print(f"⚠️ BART HTTP error: {response.status_code}")
+        last_status = None
+        for endpoint in endpoints:
+            response = requests.post(endpoint, json={"text": text}, timeout=10)
+            last_status = response.status_code
+            if response.status_code == 200:
+                result = response.json().get("corrected", text)
+                print(f"✅ BART sửa: '{text}' ➜ '{result}'")
+                return result
+            if response.status_code != 404:
+                print(f"⚠️ BART HTTP error: {response.status_code} ({endpoint})")
+                return text
+        print(f"⚠️ BART HTTP error: {last_status}")
         return text
     except Exception as e:
         print(f"⚠️ BART connection error: {e}")
@@ -494,12 +512,48 @@ def correct_text_with_bart(text):
 
 
 def run_ocr(crop_path):
-    """Run OCR across PaddleOCR versions without version-specific kwargs."""
+    """Run OCR in PaddleOCR-new compatible mode without forcing legacy kwargs."""
     try:
         return ocr_model.ocr(crop_path)
-    except TypeError:
-        # Newer PaddleOCR versions may expose predict() behavior via ocr().
-        return ocr_model.predict(crop_path)
+    except Exception as e:
+        print(f"⚠️ OCR default mode failed: {e}")
+        try:
+            return ocr_model.predict(crop_path)
+        except Exception as e2:
+            print(f"⚠️ OCR predict mode failed: {e2}")
+            return []
+
+
+def _normalize_ocr_lines(ocr_result):
+    """Normalize OCR output to legacy shape: [[box, [text, score]], ...]."""
+    if not ocr_result:
+        return []
+
+    if isinstance(ocr_result, dict):
+        rec_texts = ocr_result.get("rec_texts") or []
+        rec_scores = ocr_result.get("rec_scores") or []
+        dt_polys = ocr_result.get("dt_polys") or []
+        return [
+            [box, [text, rec_scores[idx] if idx < len(rec_scores) else 1.0]]
+            for idx, (box, text) in enumerate(zip(dt_polys, rec_texts))
+        ]
+
+    first = ocr_result[0]
+    if isinstance(first, list):
+        return first
+
+    if isinstance(first, dict):
+        rec_texts = first.get("rec_texts") or []
+        rec_scores = first.get("rec_scores") or []
+        dt_polys = first.get("dt_polys") or []
+
+        lines = []
+        for idx, (box, text) in enumerate(zip(dt_polys, rec_texts)):
+            score = rec_scores[idx] if idx < len(rec_scores) else 1.0
+            lines.append([box, [text, score]])
+        return lines
+
+    return []
 
 
 
@@ -512,7 +566,8 @@ def detect(request):
         return JsonResponse({'error': 'Missing image file'}, status=400)
 
     image_type = request.POST.get('image_type', 'report_card')
-    model = yolo_model if image_type == 'report_card' else yolo_infor
+    model = yolo_model
+    print(f"📥 detect image_type='{image_type}'")
     image_file = request.FILES['image']
     unique_filename = str(uuid.uuid4()) + ".jpg"
     temp_image_path = os.path.join(settings.MEDIA_ROOT, "temp", unique_filename)
@@ -521,48 +576,53 @@ def detect(request):
         f.write(image_file.read())
 
     try:
-        # Chạy YOLO
-        results = model(temp_image_path)[0]
-        img = cv2.imread(temp_image_path)
         os.makedirs(CROPPED_ROOT_DIR, exist_ok=True)
         cleanup_cropped_dir(CROPPED_ROOT_DIR)
 
         cropped_dir = os.path.join(CROPPED_ROOT_DIR, uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
 
-        response_data = []
+        # Info pineline:
+        if image_type != 'report_card':
+            info_filename = f"info_{uuid.uuid4().hex[:8]}.jpg"
+            info_path = os.path.join(cropped_dir, info_filename)
+            cv2.imwrite(info_path, cv2.imread(temp_image_path))
 
-        for i, box in enumerate(results.boxes.xyxy.cpu().numpy()):
+            info_data = extract_student_info_from_image(info_path)
+            print(f"✅ Gemini parsed student_info direct image: {json.dumps(info_data, ensure_ascii=False)}")
+
+            response_data = [{
+                "image_url": settings.MEDIA_URL + os.path.relpath(info_path, settings.MEDIA_ROOT).replace("\\", "/"),
+                "ocr_data": [],
+                "student_info": info_data
+            }]
+            return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
+
+        results = model(temp_image_path)[0]
+        img = cv2.imread(temp_image_path)
+
+        response_data = []
+        boxes = results.boxes.xyxy.cpu().numpy()
+        for i, box in enumerate(boxes):
             x1, y1, x2, y2 = map(int, box)
             crop = img[y1:y2, x1:x2]
+            if crop.size == 0:
+                print(f"⚠️ Empty crop at index {i}, box={box}")
+                continue
+
             crop_filename = f"crop_{i}.jpg"
             crop_path = os.path.join(cropped_dir, crop_filename)
+
             cv2.imwrite(crop_path, crop)
 
-            # OCR
             ocr_result = run_ocr(crop_path)
-            print(
-                f"🔎 OCR raw result [{image_type}] crop_{i}: "
-                f"{json.dumps(ocr_result, ensure_ascii=False, default=str)[:1500]}"
-            )
-
-            if image_type == 'report_card':
-                text_data = extract_report_card_from_ocr_result(ocr_result)
-                print(f"✅ OCR parsed report_card crop_{i}: {json.dumps(text_data, ensure_ascii=False)}")
-                result_entry = {
-                    "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
-                    "ocr_data": text_data,
-                    "student_info": {}
-                }
-            else:
-                info_data = extract_student_info_from_image(crop_path)
-                print(f"✅ OCR parsed student_info crop_{i}: {json.dumps(info_data, ensure_ascii=False)}")
-
-                result_entry = {
-                    "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
-                    "ocr_data": [],
-                    "student_info": info_data
-                }
+            text_data = extract_table_from_ocr_result_new_paddle(ocr_result)
+            print(f"✅ OCR parsed report_card crop_{i}: {json.dumps(text_data, ensure_ascii=False)}")
+            result_entry = {
+                "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
+                "ocr_data": text_data,
+                "student_info": {}
+            }
 
             response_data.append(result_entry)
 
@@ -577,109 +637,289 @@ def detect(request):
 
 
 
-def extract_report_card_from_ocr_result(ocr_result):
-    def _safe_text(raw_text):
-        if raw_text is None:
-            return ""
-
-        if isinstance(raw_text, str):
-            return raw_text.strip()
-
-        if isinstance(raw_text, (list, tuple)):
-            if not raw_text:
-                return ""
-            return str(raw_text[0]).strip()
-
-        return str(raw_text).strip()
-
-    def _safe_box_metrics(box):
-        try:
-            if box is None or len(box) < 3:
-                return None
-            x_center = (box[0][0] + box[2][0]) / 2
-            y_center = (box[0][1] + box[2][1]) / 2
-            height = abs(box[0][1] - box[2][1])
-            return x_center, y_center, height
-        except Exception:
-            return None
-
+def extract_table_from_ocr_result_new_paddle(ocr_result):
     rows = []
-    if not ocr_result:
+    ocr_lines = _normalize_ocr_lines(ocr_result)
+    if not ocr_lines:
         return []
 
-    first = ocr_result[0]
+    def normalize_text(s: str) -> str:
+        return " ".join(str(s).strip().split())
 
-    # Legacy format: [ [ [box], [text, score] ], ... ]
-    if isinstance(first, list):
-        for line in first:
-            if not line or len(line) < 2:
-                continue
-            box = line[0]
-            text = _safe_text(line[1])
-            if not text:
-                continue
-            metrics = _safe_box_metrics(box)
-            if not metrics:
-                continue
-            x_center, y_center, height = metrics
-            rows.append([y_center, x_center, text, box, height])
+    def norm_token(s: str) -> str:
+        return normalize_text(s).lower().replace(" ", "")
 
-    # Newer format: [{"rec_texts": [...], "dt_polys": [...]}]
-    elif isinstance(first, dict):
-        rec_texts = first.get("rec_texts") or []
-        dt_polys = first.get("dt_polys") or []
+    def is_score_token(s: str) -> bool:
+        s = normalize_text(s).replace(",", ".")
+        if not s:
+            return False
 
-        for box, text in zip(dt_polys, rec_texts):
-            text = _safe_text(text)
-            if not text:
-                continue
-            metrics = _safe_box_metrics(box)
-            if not metrics:
-                continue
-            x_center, y_center, height = metrics
-            rows.append([y_center, x_center, text, box, height])
+        try:
+            val = float(s)
+            return 0 <= val <= 10
+        except Exception:
+            pass
+
+        low = s.lower()
+        if low in {"dat", "đạt", "dt", "dạt", "đt"}:
+            return True
+
+        return False
+
+    def score_value(s: str) -> str:
+        s = normalize_text(s).replace(",", ".")
+        low = s.lower()
+        if low in {"dat", "đạt", "dt", "dạt", "đt"}:
+            return "Dat"
+        return s
+
+    def recompute_ca_nam(hk1: str, hk2: str, current_cn: str) -> str:
+        hk1_v = normalize_text(hk1)
+        hk2_v = normalize_text(hk2)
+
+        if hk1_v == "Dat" and hk2_v == "Dat":
+            return "Dat"
+
+        try:
+            a = float(hk1_v)
+            b = float(hk2_v)
+        except Exception:
+            return current_cn
+
+        avg = round((a + b) / 2, 1)
+        if float(int(avg)) == avg:
+            return str(int(avg))
+        return str(avg)
+
+    # ---- build rows from OCR tokens ----
+    for line in ocr_lines:
+        if not line or len(line) < 2:
+            continue
+
+        box = line[0]
+        text_info = line[1]
+
+        if box is None or not isinstance(text_info, (list, tuple)) or len(text_info) == 0:
+            continue
+
+        try:
+            pts = np.array(box, dtype=np.float32).reshape(-1, 2)
+        except Exception:
+            continue
+
+        if pts.shape[0] < 4:
+            continue
+
+        text = normalize_text(text_info[0])
+        if not text:
+            continue
+
+        x_center = float(pts[:, 0].mean())
+        y_center = float(pts[:, 1].mean())
+        height = float(pts[:, 1].max() - pts[:, 1].min())
+
+        rows.append([y_center, x_center, text, box, height])
 
     if not rows:
+        print("⚠️ bbox parser rows=0")
         return []
 
-    rows.sort(key=lambda r: r[0])
-    avg_height = np.mean([r[4] for r in rows])
+    print(f"🧪 bbox parser rows: {len(rows)}")
 
+    rows.sort(key=lambda r: r[0])
+    avg_height = np.mean([r[4] for r in rows]) if rows else 10
+    if avg_height <= 0:
+        avg_height = 10
+
+    # ---- group by visual row ----
     grouped_rows = []
     current_group = []
 
     for r in rows:
-        if not current_group or abs(r[0] - current_group[-1][0]) < avg_height * 0.7:
+        if not current_group or abs(r[0] - current_group[-1][0]) < avg_height * 0.72:
             current_group.append(r)
         else:
             grouped_rows.append(current_group)
             current_group = [r]
+
     if current_group:
         grouped_rows.append(current_group)
 
-    extracted = []
-    for group in grouped_rows:
-        group.sort(key=lambda r: r[1])
-        texts = [item[2] for item in group]
-        if "Giao duc" in texts and "cong dan" in texts:
-            idx1 = texts.index("Giao duc")
-            idx2 = texts.index("cong dan")
-            if abs(idx1 - idx2) == 1:
-                new_text = "Giáo dục công dân"
-                min_idx = min(idx1, idx2)
-                texts[min_idx] = new_text
-                del texts[max(idx1, idx2)]
-        if len(texts) >= 3:
-            corrected_subject = correct_text_with_bart(texts[0])
-            item = {
-                "ten_mon": corrected_subject,
-                "hky1": texts[1] if len(texts) > 1 else "",
-                "hky2": texts[2] if len(texts) > 2 else "",
-                "ca_nam": texts[3] if len(texts) > 3 else ""
-            }
-            extracted.append(item)
+    print(f"🧪 bbox grouped rows: {len(grouped_rows)}")
 
-    return extracted
+    # ---- find header anchors from header row ----
+    header_group = None
+    hk1_x = hk2_x = cn_x = None
+
+    for group in grouped_rows:
+        g = sorted(group, key=lambda r: r[1])
+        tokens = [norm_token(item[2]) for item in g]
+
+        has_hk1 = any(t in {"hkyi", "hki", "hk1"} for t in tokens)
+        has_hk2 = any(t in {"hkyii", "hkii", "hk2"} for t in tokens)
+        has_cn = any(t in {"cn", "canam"} for t in tokens)
+
+        if has_hk1 and has_hk2:
+            header_group = g
+            break
+
+    if header_group:
+        for item in header_group:
+            token = norm_token(item[2])
+            x = item[1]
+
+            if token in {"hkyi", "hki", "hk1"} and hk1_x is None:
+                hk1_x = x
+            elif token in {"hkyii", "hkii", "hk2"} and hk2_x is None:
+                hk2_x = x
+            elif token in {"cn", "canam"} and cn_x is None:
+                cn_x = x
+
+    if hk1_x is None or hk2_x is None or cn_x is None:
+        # fallback an toàn hơn
+        score_xs = sorted([r[1] for r in rows if is_score_token(r[2])])
+        if len(score_xs) >= 6:
+            hk1_x = float(np.percentile(score_xs, 20))
+            hk2_x = float(np.percentile(score_xs, 55))
+            cn_x = float(np.percentile(score_xs, 85))
+        else:
+            hk1_x, hk2_x, cn_x = 360.0, 540.0, 710.0
+
+    print(f"🧪 column anchors: hk1_x={hk1_x}, hk2_x={hk2_x}, cn_x={cn_x}")
+
+    extracted = []
+
+    for group in grouped_rows:
+        group = sorted(group, key=lambda r: r[1])
+        raw_texts = [normalize_text(item[2]) for item in group if normalize_text(item[2])]
+        raw_join = " ".join(raw_texts).lower()
+        if not raw_texts:
+            continue
+
+        # ---- header row ----
+        token_set = {norm_token(t) for t in raw_texts}
+        if any(t in token_set for t in {"hkyi", "hki", "hk1"}) and any(t in token_set for t in {"hkyii", "hkii", "hk2"}):
+            continue
+
+        # ---- summary row ----
+        if "dtb" in raw_join or "đtb" in raw_join or "các môn" in raw_join or "cac mon" in raw_join:
+            score_tokens = [score_value(t) for t in raw_texts if is_score_token(t)]
+            extracted.append({
+                "ten_mon": "DTB cac mon",
+                "hky1": score_tokens[0] if len(score_tokens) > 0 else "",
+                "hky2": score_tokens[1] if len(score_tokens) > 1 else "",
+                "ca_nam": score_tokens[2] if len(score_tokens) > 2 else ""
+            })
+            continue
+
+        # ---- parse normal row ----
+        text_tokens = []
+        score_candidates = []
+
+        for item in group:
+            x = item[1]
+            text = normalize_text(item[2])
+
+            if is_score_token(text):
+                score_candidates.append((x, score_value(text), text))
+            else:
+                text_tokens.append((x, text))
+
+        if not text_tokens and not score_candidates:
+            continue
+
+        # tên môn = ghép toàn bộ token chữ, KHÔNG lấy token điểm
+        subject_parts = [t[1] for t in sorted(text_tokens, key=lambda z: z[0])]
+        subject_name = " ".join(subject_parts).strip()
+
+        # replacements = {
+        #     "Vt lí": "Vatli",
+        #     "Vật lí": "Vatli",
+        #     "Vat li": "Vatli",
+        #     "Hóa hc": "Hoa hoc",
+        #     "Hóa học": "Hoa hoc",
+        #     "Sinh hc": "Sinh hoc",
+        #     "Sinh học": "Sinh hoc",
+        #     "Tin hc": "Tin hoc",
+        #     "Tin học": "Tin hoc",
+        #     "Ng văn": "Ngu van",
+        #     "Ngữ văn": "Ngu van",
+        #     "Lịch sửu": "Lich su",
+        #     "Lịch sử": "Lich su",
+        #     "Đa lí": "Diali",
+        #     "Địa lí": "Diali",
+        #     "Ngoi ng": "Ngoai ngu",
+        #     "Ngoại ngữ": "Ngoai ngu",
+        #     "Công ngh": "Cong nghe",
+        #     "Công nghệ": "Cong nghe",
+        #     "Th dc": "Theduc",
+        #     "Thể dục": "Theduc",
+        #     "Giáo dc công dân": "Giáo dục công dân",
+        #     "Giáo dc cong dan": "Giáo dục công dân",
+        #     "Giao duc cong dan": "Giáo dục công dân",
+        #     "công dân Giáo dc": "Giáo dục công dân",
+        #     "chn Ngh PT": "",
+        #     "T NN2": "",
+        # }
+        # subject_name = replacements.get(subject_name, subject_name)
+
+        # Apply BART correction to subject name
+        subject_name = correct_text_with_bart(subject_name)
+
+        if not subject_name:
+            continue
+
+        # =========================
+        # ƯU TIÊN MAP ĐIỂM THEO THỨ TỰ TRÁI -> PHẢI
+        # =========================
+        ordered_scores = [
+            normalized_score
+            for x, normalized_score, _raw_score in sorted(score_candidates, key=lambda z: z[0])
+        ]
+
+        hk1_val = ""
+        hk2_val = ""
+        cn_val = ""
+
+        if len(ordered_scores) >= 3 and all(s == "Dat" for s in ordered_scores[:3]):
+            hk1_val, hk2_val, cn_val = "Dat", "Dat", "Dat"
+        elif len(ordered_scores) >= 3:
+            hk1_val = ordered_scores[0]
+            hk2_val = ordered_scores[1]
+            cn_val = ordered_scores[2]
+        elif len(ordered_scores) == 2:
+            hk1_val = ordered_scores[0]
+            hk2_val = ordered_scores[1]
+            cn_val = ""
+        elif len(ordered_scores) == 1:
+            hk1_val = ordered_scores[0]
+
+        if len(ordered_scores) > 3:
+            hk1_val = ordered_scores[0]
+            hk2_val = ordered_scores[1]
+            cn_val = ordered_scores[2]
+
+        # Recompute yearly average to replace noisy OCR CN when HK1/HK2 are valid.
+        cn_val = recompute_ca_nam(hk1_val, hk2_val, cn_val)
+
+        extracted.append({
+            "ten_mon": subject_name,
+            "hky1": hk1_val,
+            "hky2": hk2_val,
+            "ca_nam": cn_val,
+        })
+
+    # bỏ các dòng rác hoàn toàn
+    cleaned = []
+    for item in extracted:
+        name = item["ten_mon"].strip()
+        if not name:
+            continue
+        if name in {"T NN2", "chn Ngh PT"}:
+            continue
+        cleaned.append(item)
+
+    return cleaned
 
 
 def extract_student_info_from_image(image_path):
@@ -688,8 +928,42 @@ def extract_student_info_from_image(image_path):
             image_bytes = img_file.read()
             base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
+        return extract_student_info_from_base64(base64_image)
+
+    except Exception as e:
+        print("❌ Lỗi khi xử lý ảnh bằng Gemini:", str(e))
+
+    return {
+        "name": "",
+        "gender": "",
+        "dob": ""
+    }
+
+
+def extract_student_info_from_crop(crop_image):
+    try:
+        ok, encoded = cv2.imencode('.jpg', crop_image)
+        if not ok:
+            raise ValueError('Không thể encode ảnh crop sang JPEG')
+
+        base64_image = base64.b64encode(encoded.tobytes()).decode("utf-8")
+        return extract_student_info_from_base64(base64_image)
+
+    except Exception as e:
+        print("❌ Lỗi khi xử lý crop bằng Gemini:", str(e))
+
+    return {
+        "name": "",
+        "gender": "",
+        "dob": ""
+    }
+
+
+def extract_student_info_from_base64(base64_image):
+    try:
+
         prompt = """
-        Hãy trích xuất thông tin sau từ ảnh học bạ hoặc thông tin sinh viên:
+        Hãy trích xuất thông tin sau từ ảnh thông tin sinh viên:
 
         - Họ và tên
         - Giới tính
@@ -721,7 +995,6 @@ def extract_student_info_from_image(image_path):
             output_text = output_text[:-3]
 
         output_text = output_text.strip()
-        print("✅ Gemini JSON cleaned:", output_text)
 
         return json.loads(output_text)
 

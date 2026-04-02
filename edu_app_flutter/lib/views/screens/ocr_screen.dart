@@ -4,55 +4,85 @@ import 'dart:convert';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
+import 'package:edu_app_flutter/views/widgets/ocr/editable_score_table.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
 
 class OcrScreen extends StatefulWidget {
-  const OcrScreen({super.key, required this.imagePaths});
+  const OcrScreen({super.key, required this.imageInputs});
 
-  final List<String> imagePaths;
+  final List<OcrDetectImageInput> imageInputs;
 
   @override
   State<OcrScreen> createState() => _OcrScreenState();
 }
 
-class _OcrScreenState extends State<OcrScreen> {
-  int _selectedGrade = 12;
+class _OcrScreenState extends State<OcrScreen>
+    with SingleTickerProviderStateMixin {
+  int _selectedGrade = 10;
   final OcrService _ocrService = OcrService();
   bool _isDetecting = true;
   String? _detectError;
-  List<Map<String, dynamic>> _ocrResults = const <Map<String, dynamic>>[];
+  List<OcrDetectResult> _ocrResults = const <OcrDetectResult>[];
+  late final AnimationController _scanController;
+  late final Animation<double> _scanPosition;
+  final Map<int, List<OcrScoreRow>> _scoresByGrade = <int, List<OcrScoreRow>>{
+    10: const <OcrScoreRow>[],
+    11: const <OcrScoreRow>[],
+    12: const <OcrScoreRow>[],
+  };
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _classController = TextEditingController();
-  final TextEditingController _semesterController = TextEditingController();
-
-  final List<_SubjectScore> _scores = const <_SubjectScore>[];
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _scanController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _scanPosition = CurvedAnimation(
+      parent: _scanController,
+      curve: Curves.easeInOut,
+    );
     _runDetect();
   }
 
   @override
   void dispose() {
+    _scanController.dispose();
     _nameController.dispose();
-    _classController.dispose();
-    _semesterController.dispose();
+    _genderController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
+// animation scanning
+  void _syncScanAnimation() {
+    if (_isDetecting) {
+      if (!_scanController.isAnimating) {
+        _scanController.repeat(reverse: true);
+      }
+    } else {
+      _scanController.stop();
+      _scanController.value = 0;
+    }
+  }
+
   Future<void> _runDetect() async {
-    if (widget.imagePaths.isEmpty) {
+    if (widget.imageInputs.isEmpty) {
       setState(() {
         _isDetecting = false;
         _detectError = 'Khong co anh de quet.';
       });
+      _syncScanAnimation();
       return;
     }
 
@@ -60,70 +90,115 @@ class _OcrScreenState extends State<OcrScreen> {
       _isDetecting = true;
       _detectError = null;
     });
+    _syncScanAnimation();
 
     try {
       final results = await _ocrService.detectReportCard(
-        imagePaths: widget.imagePaths,
+        images: widget.imageInputs,
       );
 
       if (!mounted) return;
 
       _logOcrData(results);
       _applyStudentInfo(results);
+      _mapScoresToGrades(results);
 
       setState(() {
         _ocrResults = results;
         _isDetecting = false;
       });
+      _syncScanAnimation();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
         _isDetecting = false;
         _detectError = e.message;
       });
+      _syncScanAnimation();
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isDetecting = false;
         _detectError = 'Quet hoc ba that bai. Vui long thu lai.';
       });
+      _syncScanAnimation();
     }
   }
 
-  void _applyStudentInfo(List<Map<String, dynamic>> results) {
+  void _applyStudentInfo(List<OcrDetectResult> results) {
     if (results.isEmpty) return;
 
-    final dynamic first = results.first;
-    if (first is! Map<String, dynamic>) return;
+    OcrDetectResult firstResult = results.first;
+    for (final item in results) {
+      if (item.role == OcrImageRole.studentInfo) {
+        firstResult = item;
+        break;
+      }
+    }
 
-    final dynamic studentInfo = first['student_info'];
-    if (studentInfo is! Map<String, dynamic>) return;
+    final studentInfo = firstResult.studentInfo;
 
     final name = (studentInfo['name'] ?? studentInfo['full_name'] ?? '')
         .toString()
         .trim();
-    final className =
-        (studentInfo['class'] ?? studentInfo['class_name'] ?? '').toString().trim();
-    final semester =
-        (studentInfo['semester'] ?? studentInfo['hoc_ky'] ?? '').toString().trim();
+    final gender =
+      (studentInfo['gender'] ?? studentInfo['sex'] ?? '').toString().trim();
+    final dob =
+      (studentInfo['dob'] ?? studentInfo['date_of_birth'] ?? '').toString().trim();
 
     _nameController.text = name;
-    _classController.text = className;
-    _semesterController.text = semester;
+    _genderController.text = gender;
+    _dobController.text = dob;
   }
 
-  void _logOcrData(List<Map<String, dynamic>> results) {
+  void _mapScoresToGrades(List<OcrDetectResult> results) {
+    final next = <int, List<OcrScoreRow>>{
+      10: const <OcrScoreRow>[],
+      11: const <OcrScoreRow>[],
+      12: const <OcrScoreRow>[],
+    };
+
+    for (final item in results) {
+      if (item.role == OcrImageRole.grade10) {
+        next[10] = List<OcrScoreRow>.from(item.scores);
+      }
+      if (item.role == OcrImageRole.grade11) {
+        next[11] = List<OcrScoreRow>.from(item.scores);
+      }
+      if (item.role == OcrImageRole.grade12) {
+        next[12] = List<OcrScoreRow>.from(item.scores);
+      }
+    }
+
+    _scoresByGrade
+      ..clear()
+      ..addAll(next);
+  }
+
+  void _updateScoresForSelectedGrade(List<OcrScoreRow> rows) {
+    _scoresByGrade[_selectedGrade] = rows;
+  }
+
+  void _logOcrData(List<OcrDetectResult> results) {
     if (results.isEmpty) {
       debugPrint('[OCR][detect] Khong co result nao tu backend.');
       return;
     }
 
     for (var i = 0; i < results.length; i++) {
-      final result = results[i];
-      final dynamic ocrData = result['ocr_data'];
+      final item = results[i];
+      final dynamic ocrData = item.rawOcrData;
+      final fullResultMap = <String, dynamic>{
+        'image_url': item.imageUrl,
+        'student_info': item.studentInfo,
+        'ocr_data': item.rawOcrData,
+      };
 
-      debugPrint('[OCR][detect] result_index=$i');
+      debugPrint('[OCR][detect] result_index=$i role=${item.role.name}');
       debugPrint('[OCR][detect] ocr_data_type=${ocrData.runtimeType}');
+      _debugPrintLong(
+        '[OCR][detect] full_result_json=${jsonEncode(fullResultMap)}',
+      );
 
       try {
         _debugPrintLong('[OCR][detect] ocr_data_json=${jsonEncode(ocrData)}');
@@ -145,9 +220,9 @@ class _OcrScreenState extends State<OcrScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String? firstPath = widget.imagePaths.isEmpty
+    final String? firstPath = widget.imageInputs.isEmpty
         ? null
-        : widget.imagePaths.first;
+      : widget.imageInputs.first.path;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -164,10 +239,12 @@ class _OcrScreenState extends State<OcrScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPreviewCard(firstPath),
-                    const SizedBox(height: 14),
-                    _buildProgressCard(),
-                    const SizedBox(height: 16),
+                    if (_isDetecting) ...[
+                      _buildPreviewCard(firstPath),
+                      const SizedBox(height: 14),
+                      _buildProgressCard(),
+                      const SizedBox(height: 16),
+                    ],
                     const Text(
                       AppTexts.ocrResultTitle,
                       style: TextStyle(
@@ -268,14 +345,98 @@ class _OcrScreenState extends State<OcrScreen> {
                         Container(
                           color: AppColors.primary.withValues(alpha: 0.136),
                         ),
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 42),
-                            height: 2,
-                            color: AppColors.primary,
+                        if (_isDetecting)
+                          Positioned.fill(
+                            child: AnimatedBuilder(
+                              animation: _scanPosition,
+                              builder: (context, child) {
+                                final double usableHeight =
+                                    MediaQuery.sizeOf(context).width * 0.75;
+                                final double scannerHeight = 84;
+                                final double maxTop =
+                                    (usableHeight - scannerHeight).clamp(
+                                  0.0,
+                                  double.infinity,
+                                );
+                                final double top = maxTop * _scanPosition.value;
+
+                                return LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final double overlayHeight =
+                                        constraints.maxHeight;
+                                    final double safeMaxTop =
+                                        (overlayHeight - scannerHeight)
+                                            .clamp(0.0, double.infinity);
+                                    final double safeTop =
+                                        safeMaxTop * _scanPosition.value;
+
+                                    return Stack(
+                                      children: [
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          top: safeTop,
+                                          child: IgnorePointer(
+                                            child: Container(
+                                              height: scannerHeight,
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    AppColors.primary
+                                                        .withValues(alpha: 0.0),
+                                                    AppColors.primary
+                                                        .withValues(alpha: 0.26),
+                                                    AppColors.primary
+                                                        .withValues(alpha: 0.78),
+                                                    AppColors.primary
+                                                        .withValues(alpha: 0.26),
+                                                    AppColors.primary
+                                                        .withValues(alpha: 0.0),
+                                                  ],
+                                                  stops: const [
+                                                    0.0,
+                                                    0.35,
+                                                    0.5,
+                                                    0.65,
+                                                    1.0,
+                                                  ],
+                                                ),
+                                                boxShadow: const [
+                                                  BoxShadow(
+                                                    color: Color(0x661337EC),
+                                                    blurRadius: 18,
+                                                    spreadRadius: 1,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          left: 12,
+                                          right: 12,
+                                          top: safeTop + 26,
+                                          child: IgnorePointer(
+                                            child: Container(
+                                              height: 2.5,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.9),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ),
-                        ),
                       ],
                     ),
             ),
@@ -401,15 +562,15 @@ class _OcrScreenState extends State<OcrScreen> {
             children: [
               Expanded(
                 child: _EditableField(
-                  label: AppTexts.ocrClass,
-                  controller: _classController,
+                  label: AppTexts.ocrGender,
+                  controller: _genderController,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _EditableField(
-                  label: AppTexts.ocrSemester,
-                  controller: _semesterController,
+                  label: AppTexts.ocrDateOfBirth,
+                  controller: _dobController,
                 ),
               ),
             ],
@@ -435,38 +596,10 @@ class _OcrScreenState extends State<OcrScreen> {
               ),
             ),
           ],
-          if (!_isDetecting && _detectError == null && _ocrResults.isNotEmpty) ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF8FF),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFCFE8FF)),
-              ),
-              child: Text(
-                'Da nhan ${_ocrResults.length} ket qua OCR. Du lieu ocr_data da duoc log ra console de phan tich.',
-                style: const TextStyle(
-                  fontSize: AppFontSizes.dashboardCaption,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1D4ED8),
-                ),
-              ),
-            ),
-          ],
-          const Text(
-            AppTexts.ocrAverageScore,
-            style: TextStyle(
-              fontSize: AppFontSizes.dashboardCaption,
-              fontWeight: FontWeight.w700,
-              color: AppColors.subtitle,
-            ),
-          ),
           const SizedBox(height: 8),
-          if (_scores.isEmpty)
+          if ((_scoresByGrade[_selectedGrade] ?? const <OcrScoreRow>[]).isEmpty)
             const Text(
-              'Dang doi phan tich ocr_data de map bang diem.',
+              'Lop nay chua co du lieu diem OCR.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -474,42 +607,9 @@ class _OcrScreenState extends State<OcrScreen> {
               ),
             )
           else
-            ..._scores.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F7FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.subject,
-                          style: const TextStyle(
-                            fontSize: AppFontSizes.dashboardBody,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.label,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        item.score,
-                        style: const TextStyle(
-                          fontSize: AppFontSizes.dashboardBody,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            EditableScoreTable(
+              rows: _scoresByGrade[_selectedGrade] ?? const <OcrScoreRow>[],
+              onChanged: _updateScoresForSelectedGrade,
             ),
         ],
       ),
@@ -559,9 +659,3 @@ class _EditableField extends StatelessWidget {
   }
 }
 
-class _SubjectScore {
-  const _SubjectScore({required this.subject, required this.score});
-
-  final String subject;
-  final String score;
-}

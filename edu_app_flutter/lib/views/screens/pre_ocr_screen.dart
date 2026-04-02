@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/views/screens/ocr_screen.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,15 @@ class PreOcrScreen extends StatefulWidget {
 class _PreOcrScreenState extends State<PreOcrScreen> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedImages = [];
+  final List<OcrImageRole> _selectedRoles = [];
   bool _isPicking = false;
+
+  static const List<OcrImageRole> _roleOptions = <OcrImageRole>[
+    OcrImageRole.studentInfo,
+    OcrImageRole.grade10,
+    OcrImageRole.grade11,
+    OcrImageRole.grade12,
+  ];
 
   Future<void> _pickFromDevice() async {
     await _runPicker(() async {
@@ -28,6 +37,14 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
         _selectedImages
           ..clear()
           ..addAll(images);
+        _selectedRoles
+          ..clear()
+          ..addAll(
+            List<OcrImageRole>.generate(
+              images.length,
+              (index) => _defaultRoleForIndex(index),
+            ),
+          );
       });
     });
   }
@@ -40,7 +57,9 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
       );
       if (image == null || !mounted) return;
       setState(() {
+        final nextIndex = _selectedImages.length;
         _selectedImages.add(image);
+        _selectedRoles.add(_defaultRoleForIndex(nextIndex));
       });
     });
   }
@@ -69,13 +88,123 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
 
   void _confirmSelection() {
     if (_selectedImages.isEmpty) return;
+    final sortedInputs = _buildSortedImageInputs();
+    if (sortedInputs.isEmpty) return;
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => OcrScreen(
-          imagePaths: _selectedImages.map((image) => image.path).toList(),
+          imageInputs: sortedInputs,
         ),
       ),
     );
+  }
+
+  Future<void> _openImagePreview(XFile file, int index) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xE6000000),
+      builder: (dialogContext) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.9,
+                    maxScale: 4.5,
+                    child: Image.file(
+                      File(file.path),
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 14,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text(AppTexts.preOcrExitPreview),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xE8121A2F),
+                      foregroundColor: Colors.white,
+                      textStyle: const TextStyle(
+                        fontSize: AppFontSizes.dashboardCaption,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 18,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC111A31),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0x339DB3DB)),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Anh ${index + 1}',
+                          style: const TextStyle(
+                            fontSize: AppFontSizes.dashboardBody,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          AppTexts.preOcrPreviewHint,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: AppFontSizes.dashboardCaption,
+                            color: Color(0xD6FFFFFF),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  OcrImageRole _defaultRoleForIndex(int index) {
+    if (index == 0) return OcrImageRole.studentInfo;
+    if (index == 1) return OcrImageRole.grade10;
+    if (index == 2) return OcrImageRole.grade11;
+    if (index == 3) return OcrImageRole.grade12;
+    return OcrImageRole.grade12;
+  }
+
+  List<OcrDetectImageInput> _buildSortedImageInputs() {
+    final inputs = <OcrDetectImageInput>[];
+
+    for (var i = 0; i < _selectedImages.length; i++) {
+      final role = i < _selectedRoles.length
+          ? _selectedRoles[i]
+          : _defaultRoleForIndex(i);
+
+      inputs.add(OcrDetectImageInput(path: _selectedImages[i].path, role: role));
+    }
+
+    inputs.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return inputs;
   }
 
   @override
@@ -95,6 +224,8 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildCaptureGuideCard(),
+                    const SizedBox(height: 14),
                     _buildOptionButtons(),
                     const SizedBox(height: 18),
                     Text(
@@ -193,6 +324,62 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
     );
   }
 
+  Widget _buildCaptureGuideCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF4FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD7E4FF)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.tips_and_updates_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppTexts.preOcrGuideTitle,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.dashboardBody,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.title,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  AppTexts.preOcrGuideBody,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.dashboardCaption,
+                    color: AppColors.subtitle,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
@@ -216,7 +403,7 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
 
   Widget _buildImagePreviewList() {
     return SizedBox(
-      height: 190,
+      height: 224,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _selectedImages.length,
@@ -224,76 +411,191 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
         itemBuilder: (context, index) {
           final file = _selectedImages[index];
 
-          return Container(
-            width: 170,
-            decoration: BoxDecoration(
-              color: AppColors.white,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.cardBorder),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x12000000),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
+              onTap: () => _openImagePreview(file, index),
+              child: Container(
+                width: 170,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x12000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
                     ),
-                    child: Image.file(
-                      File(file.path),
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                            child: Image.file(
+                              File(file.path),
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            left: 8,
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xB3121A2F),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.open_in_full_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      AppTexts.preOcrTapToPreview,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: AppFontSizes.dashboardTiny,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-                  child: Text(
-                    'Ảnh ${index + 1}',
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.dashboardCaption,
-                      color: AppColors.label,
-                      fontWeight: FontWeight.w700,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Anh ${index + 1}',
+                            style: const TextStyle(
+                              fontSize: AppFontSizes.dashboardCaption,
+                              color: AppColors.label,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            AppTexts.preOcrImageLabel,
+                            style: TextStyle(
+                              fontSize: AppFontSizes.dashboardTiny,
+                              color: AppColors.subtitle,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 34,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F6FD),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<OcrImageRole>(
+                                value: index < _selectedRoles.length
+                                    ? _selectedRoles[index]
+                                    : _defaultRoleForIndex(index),
+                                isExpanded: true,
+                                icon: const Icon(
+                                  Icons.expand_more_rounded,
+                                  size: 18,
+                                  color: AppColors.subtitle,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: AppFontSizes.dashboardTiny,
+                                  color: AppColors.title,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                items: _roleOptions.map((role) {
+                                  return DropdownMenuItem<OcrImageRole>(
+                                    value: role,
+                                    child: Text(
+                                      OcrDetectImageInput(path: '', role: role)
+                                          .roleLabel,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (role) {
+                                  if (role == null) return;
+                                  setState(() {
+                                    if (index < _selectedRoles.length) {
+                                      _selectedRoles[index] = role;
+                                    } else {
+                                      _selectedRoles.add(role);
+                                    }
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Row(
+                        children: [
+                          _TinyActionButton(
+                            icon: Icons.photo_library_rounded,
+                            tooltip: 'Chọn lại từ thư viện',
+                            onTap: () =>
+                                _replaceImage(index, ImageSource.gallery),
+                          ),
+                          const SizedBox(width: 6),
+                          _TinyActionButton(
+                            icon: Icons.camera_alt_rounded,
+                            tooltip: 'Chụp lại ảnh này',
+                            onTap: () => _replaceImage(index, ImageSource.camera),
+                          ),
+                          const Spacer(),
+                          _TinyActionButton(
+                            icon: Icons.delete_outline_rounded,
+                            tooltip: 'Xóa ảnh này',
+                            isDanger: true,
+                            onTap: () {
+                              setState(() {
+                                _selectedImages.removeAt(index);
+                                if (index < _selectedRoles.length) {
+                                  _selectedRoles.removeAt(index);
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  child: Row(
-                    children: [
-                      _TinyActionButton(
-                        icon: Icons.photo_library_rounded,
-                        tooltip: 'Chọn lại',
-                        onTap: () => _replaceImage(index, ImageSource.gallery),
-                      ),
-                      const SizedBox(width: 6),
-                      _TinyActionButton(
-                        icon: Icons.camera_alt_rounded,
-                        tooltip: 'Chụp lại',
-                        onTap: () => _replaceImage(index, ImageSource.camera),
-                      ),
-                      const Spacer(),
-                      _TinyActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        tooltip: 'Xóa',
-                        isDanger: true,
-                        onTap: () {
-                          setState(() {
-                            _selectedImages.removeAt(index);
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },
