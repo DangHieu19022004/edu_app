@@ -832,36 +832,36 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         subject_parts = [t[1] for t in sorted(text_tokens, key=lambda z: z[0])]
         subject_name = " ".join(subject_parts).strip()
 
-        # replacements = {
-        #     "Vt lí": "Vatli",
-        #     "Vật lí": "Vatli",
-        #     "Vat li": "Vatli",
-        #     "Hóa hc": "Hoa hoc",
-        #     "Hóa học": "Hoa hoc",
-        #     "Sinh hc": "Sinh hoc",
-        #     "Sinh học": "Sinh hoc",
-        #     "Tin hc": "Tin hoc",
-        #     "Tin học": "Tin hoc",
-        #     "Ng văn": "Ngu van",
-        #     "Ngữ văn": "Ngu van",
-        #     "Lịch sửu": "Lich su",
-        #     "Lịch sử": "Lich su",
-        #     "Đa lí": "Diali",
-        #     "Địa lí": "Diali",
-        #     "Ngoi ng": "Ngoai ngu",
-        #     "Ngoại ngữ": "Ngoai ngu",
-        #     "Công ngh": "Cong nghe",
-        #     "Công nghệ": "Cong nghe",
-        #     "Th dc": "Theduc",
-        #     "Thể dục": "Theduc",
-        #     "Giáo dc công dân": "Giáo dục công dân",
-        #     "Giáo dc cong dan": "Giáo dục công dân",
-        #     "Giao duc cong dan": "Giáo dục công dân",
-        #     "công dân Giáo dc": "Giáo dục công dân",
-        #     "chn Ngh PT": "",
-        #     "T NN2": "",
-        # }
-        # subject_name = replacements.get(subject_name, subject_name)
+        replacements = {
+            "Vt lí": "Vatli",
+            "Vật lí": "Vatli",
+            "Vat li": "Vatli",
+            "Hóa hc": "Hoa hoc",
+            "Hóa học": "Hoa hoc",
+            "Sinh hc": "Sinh hoc",
+            "Sinh học": "Sinh hoc",
+            "Tin hc": "Tin hoc",
+            "Tin học": "Tin hoc",
+            "Ng văn": "Ngu van",
+            "Ngữ văn": "Ngu van",
+            "Lịch sửu": "Lich su",
+            "Lịch sử": "Lich su",
+            "Đa lí": "Diali",
+            "Địa lí": "Diali",
+            "Ngoi ng": "Ngoai ngu",
+            "Ngoại ngữ": "Ngoai ngu",
+            "Công ngh": "Cong nghe",
+            "Công nghệ": "Cong nghe",
+            "Th dc": "Theduc",
+            "Thể dục": "Theduc",
+            "Giáo dc công dân": "Giáo dục công dân",
+            "Giáo dc cong dan": "Giáo dục công dân",
+            "Giao duc cong dan": "Giáo dục công dân",
+            "công dân Giáo dc": "Giáo dục công dân",
+            "chn Ngh PT": "",
+            "T NN2": "",
+        }
+        subject_name = replacements.get(subject_name, subject_name)
 
         # Apply BART correction to subject name
         subject_name = correct_text_with_bart(subject_name)

@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/classroom_service.dart';
 import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
@@ -25,10 +27,15 @@ class OcrScreen extends StatefulWidget {
 class _OcrScreenState extends State<OcrScreen>
     with SingleTickerProviderStateMixin {
   int _selectedGrade = 10;
+  String? _selectedClassId;
   final OcrService _ocrService = OcrService();
+  final ClassroomService _classroomService = ClassroomService();
   bool _isDetecting = true;
+  bool _isLoadingClassrooms = true;
   String? _detectError;
+  String? _classroomError;
   List<OcrDetectResult> _ocrResults = const <OcrDetectResult>[];
+  List<ClassroomItem> _classrooms = const <ClassroomItem>[];
   late final AnimationController _scanController;
   late final Animation<double> _scanPosition;
   final Map<int, List<OcrScoreRow>> _scoresByGrade = <int, List<OcrScoreRow>>{
@@ -52,6 +59,7 @@ class _OcrScreenState extends State<OcrScreen>
       parent: _scanController,
       curve: Curves.easeInOut,
     );
+    _loadClassrooms();
     _runDetect();
   }
 
@@ -122,6 +130,36 @@ class _OcrScreenState extends State<OcrScreen>
         _detectError = 'Quet hoc ba that bai. Vui long thu lai.';
       });
       _syncScanAnimation();
+    }
+  }
+
+  Future<void> _loadClassrooms() async {
+    setState(() {
+      _isLoadingClassrooms = true;
+      _classroomError = null;
+    });
+
+    try {
+      final classrooms = await _classroomService.getClassrooms();
+      if (!mounted) return;
+
+      setState(() {
+        _classrooms = classrooms;
+        _selectedClassId = classrooms.isNotEmpty ? classrooms.first.id : null;
+        _isLoadingClassrooms = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingClassrooms = false;
+        _classroomError = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingClassrooms = false;
+        _classroomError = 'Khong tai duoc danh sach lop. Vui long thu lai.';
+      });
     }
   }
 
@@ -254,6 +292,8 @@ class _OcrScreenState extends State<OcrScreen>
                       ),
                     ),
                     const SizedBox(height: 10),
+                    _buildGeneralInfoCard(),
+                    const SizedBox(height: 14),
                     GradeTabs(
                       selectedGrade: _selectedGrade,
                       onChanged: (grade) {
@@ -262,7 +302,7 @@ class _OcrScreenState extends State<OcrScreen>
                       },
                     ),
                     const SizedBox(height: 10),
-                    _buildResultCard(),
+                    _buildScoresCard(),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -542,7 +582,7 @@ class _OcrScreenState extends State<OcrScreen>
     );
   }
 
-  Widget _buildResultCard() {
+  Widget _buildGeneralInfoCard() {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
@@ -575,11 +615,91 @@ class _OcrScreenState extends State<OcrScreen>
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          if (_detectError != null) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Lớp',
+            style: TextStyle(
+              fontSize: AppFontSizes.dashboardCaption,
+              fontWeight: FontWeight.w700,
+              color: AppColors.subtitle,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingClassrooms)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_classroomError != null)
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3F3),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFD4D4)),
+              ),
+              child: Text(
+                _classroomError!,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.dashboardCaption,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFB42318),
+                ),
+              ),
+            )
+          else if (_classrooms.isEmpty)
+            const Text(
+              'Bạn chưa có lớp học nào. Hãy tạo lớp trước khi lưu học bạ.',
+              style: TextStyle(
+                fontSize: AppFontSizes.dashboardCaption,
+                color: AppColors.subtitle,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _classrooms.map((classroom) {
+                  final bool isSelected = _selectedClassId == classroom.id;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(classroom.name),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() => _selectedClassId = classroom.id);
+                      },
+                      labelStyle: TextStyle(
+                        fontSize: AppFontSizes.dashboardCaption,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : AppColors.primary,
+                      ),
+                      selectedColor: AppColors.primary,
+                      backgroundColor: const Color(0xFFEFF3FF),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppColors.primary
+                              : const Color(0xFFD8E2FF),
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      showCheckmark: false,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          if (_detectError != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF3F3),
@@ -596,10 +716,26 @@ class _OcrScreenState extends State<OcrScreen>
               ),
             ),
           ],
-          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoresCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 14),
           if ((_scoresByGrade[_selectedGrade] ?? const <OcrScoreRow>[]).isEmpty)
             const Text(
-              'Lop nay chua co du lieu diem OCR.',
+              'Lớp này chưa có dữ liệu điểm OCR.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
