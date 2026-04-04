@@ -86,15 +86,16 @@ class ReportCard(Document):
 class Subject(EmbeddedDocument):
     name = StringField(required=True, max_length=100)
     year = IntField(required=True)  # 1 = lớp 10, 2 = lớp 11, 3 = lớp 12
-    year1_sem1_score = FloatField(null=True)
-    year1_sem2_score = FloatField(null=True)
-    year1_final_score = FloatField(null=True)
-    year2_sem1_score = FloatField(null=True)
-    year2_sem2_score = FloatField(null=True)
-    year2_final_score = FloatField(null=True)
-    year3_sem1_score = FloatField(null=True)
-    year3_sem2_score = FloatField(null=True)
-    year3_final_score = FloatField(null=True)
+    # Store subject scores as string to support both numeric scores and pass/fail text.
+    year1_sem1_score = StringField(default='', max_length=20)
+    year1_sem2_score = StringField(default='', max_length=20)
+    year1_final_score = StringField(default='', max_length=20)
+    year2_sem1_score = StringField(default='', max_length=20)
+    year2_sem2_score = StringField(default='', max_length=20)
+    year2_final_score = StringField(default='', max_length=20)
+    year3_sem1_score = StringField(default='', max_length=20)
+    year3_sem2_score = StringField(default='', max_length=20)
+    year3_final_score = StringField(default='', max_length=20)
 
 
 class ReportCardSubject(Document):
