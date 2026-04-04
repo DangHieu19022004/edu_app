@@ -513,14 +513,21 @@ def correct_text_with_bart(text):
 
 def run_ocr(crop_path):
     """Run OCR in PaddleOCR-new compatible mode without forcing legacy kwargs."""
+    started_at = time.perf_counter()
+    print(f"⏱️ [OCR] start: {crop_path}")
     try:
-        return ocr_model.ocr(crop_path)
+        result = ocr_model.ocr(crop_path)
+        print(f"⏱️ [OCR] ocr() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
+        return result
     except Exception as e:
         print(f"⚠️ OCR default mode failed: {e}")
         try:
-            return ocr_model.predict(crop_path)
+            result = ocr_model.predict(crop_path)
+            print(f"⏱️ [OCR] predict() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
+            return result
         except Exception as e2:
             print(f"⚠️ OCR predict mode failed: {e2}")
+            print(f"⏱️ [OCR] failed after {time.perf_counter() - started_at:.3f}s: {crop_path}")
             return []
 
 
@@ -568,27 +575,42 @@ def detect(request):
     image_type = request.POST.get('image_type', 'report_card')
     model = yolo_model
     print(f"📥 detect image_type='{image_type}'")
+    pipeline_started_at = time.perf_counter()
     image_file = request.FILES['image']
     unique_filename = str(uuid.uuid4()) + ".jpg"
     temp_image_path = os.path.join(settings.MEDIA_ROOT, "temp", unique_filename)
     os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
     with open(temp_image_path, 'wb+') as f:
         f.write(image_file.read())
+    print(f"⏱️ [detect] saved temp image in {time.perf_counter() - pipeline_started_at:.3f}s: {temp_image_path}")
 
     try:
+        cleanup_started_at = time.perf_counter()
         os.makedirs(CROPPED_ROOT_DIR, exist_ok=True)
         cleanup_cropped_dir(CROPPED_ROOT_DIR)
+        print(f"⏱️ [detect] cleanup_cropped_dir done in {time.perf_counter() - cleanup_started_at:.3f}s")
 
+        cropped_dir_started_at = time.perf_counter()
         cropped_dir = os.path.join(CROPPED_ROOT_DIR, uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
+        print(f"⏱️ [detect] create cropped dir done in {time.perf_counter() - cropped_dir_started_at:.3f}s: {cropped_dir}")
 
         # Info pineline:
         if image_type != 'report_card':
+            info_started_at = time.perf_counter()
             info_filename = f"info_{uuid.uuid4().hex[:8]}.jpg"
             info_path = os.path.join(cropped_dir, info_filename)
-            cv2.imwrite(info_path, cv2.imread(temp_image_path))
+            image_read_started_at = time.perf_counter()
+            temp_image = cv2.imread(temp_image_path)
+            print(f"⏱️ [detect] cv2.imread(temp) done in {time.perf_counter() - image_read_started_at:.3f}s")
 
+            write_started_at = time.perf_counter()
+            cv2.imwrite(info_path, temp_image)
+            print(f"⏱️ [detect] cv2.imwrite(info image) done in {time.perf_counter() - write_started_at:.3f}s: {info_path}")
+
+            gemini_started_at = time.perf_counter()
             info_data = extract_student_info_from_image(info_path)
+            print(f"⏱️ [detect] Gemini student info done in {time.perf_counter() - gemini_started_at:.3f}s")
             print(f"✅ Gemini parsed student_info direct image: {json.dumps(info_data, ensure_ascii=False)}")
 
             response_data = [{
@@ -596,14 +618,22 @@ def detect(request):
                 "ocr_data": [],
                 "student_info": info_data
             }]
+            print(f"⏱️ [detect] total non-report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
             return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
 
+        yolo_started_at = time.perf_counter()
         results = model(temp_image_path)[0]
+        print(f"⏱️ [detect] YOLO inference done in {time.perf_counter() - yolo_started_at:.3f}s")
+
+        image_load_started_at = time.perf_counter()
         img = cv2.imread(temp_image_path)
+        print(f"⏱️ [detect] cv2.imread(report image) done in {time.perf_counter() - image_load_started_at:.3f}s")
 
         response_data = []
         boxes = results.boxes.xyxy.cpu().numpy()
+        print(f"⏱️ [detect] YOLO detected {len(boxes)} boxes")
         for i, box in enumerate(boxes):
+            crop_started_at = time.perf_counter()
             x1, y1, x2, y2 = map(int, box)
             crop = img[y1:y2, x1:x2]
             if crop.size == 0:
@@ -613,10 +643,17 @@ def detect(request):
             crop_filename = f"crop_{i}.jpg"
             crop_path = os.path.join(cropped_dir, crop_filename)
 
+            write_crop_started_at = time.perf_counter()
             cv2.imwrite(crop_path, crop)
+            print(f"⏱️ [detect] crop {i} cv2.imwrite done in {time.perf_counter() - write_crop_started_at:.3f}s: {crop_path}")
 
+            ocr_started_at = time.perf_counter()
             ocr_result = run_ocr(crop_path)
+            print(f"⏱️ [detect] crop {i} OCR wrapper finished in {time.perf_counter() - ocr_started_at:.3f}s")
+
+            parse_started_at = time.perf_counter()
             text_data = extract_table_from_ocr_result_new_paddle(ocr_result)
+            print(f"⏱️ [detect] crop {i} parse finished in {time.perf_counter() - parse_started_at:.3f}s")
             print(f"✅ OCR parsed report_card crop_{i}: {json.dumps(text_data, ensure_ascii=False)}")
             result_entry = {
                 "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
@@ -625,7 +662,9 @@ def detect(request):
             }
 
             response_data.append(result_entry)
+            print(f"⏱️ [detect] crop {i} total done in {time.perf_counter() - crop_started_at:.3f}s")
 
+        print(f"⏱️ [detect] total report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
         return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
 
     except Exception as e:
@@ -864,7 +903,10 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         subject_name = replacements.get(subject_name, subject_name)
 
         # Apply BART correction to subject name
+        bart_started_at = time.perf_counter()
+        print(f"⏱️ [parse] BART start: {subject_name}")
         subject_name = correct_text_with_bart(subject_name)
+        print(f"⏱️ [parse] BART done in {time.perf_counter() - bart_started_at:.3f}s: {subject_name}")
 
         if not subject_name:
             continue
