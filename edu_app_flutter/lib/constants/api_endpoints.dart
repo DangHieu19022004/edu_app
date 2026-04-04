@@ -11,4 +11,5 @@ class ApiEndpoints {
   static const String classroomGetStudentsByClass = '/classroom/get_students_by_class/';
   static const String classroomDeleteClassroom = '/classroom/delete_classroom/';
   static const String ocrDetect = '/ocr/detect/';
+  static const String ocrSaveFullReportCard = '/ocr/save_full_report_card/';
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
@@ -10,6 +11,7 @@ import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/classroom_service.dart';
 import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 import 'package:edu_app_flutter/views/widgets/grade_tabs.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/editable_score_table.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
@@ -26,12 +28,15 @@ class OcrScreen extends StatefulWidget {
 
 class _OcrScreenState extends State<OcrScreen>
     with SingleTickerProviderStateMixin {
+  static final Random _random = Random();
   int _selectedGrade = 10;
   String? _selectedClassId;
+  String? _studentId;
   final OcrService _ocrService = OcrService();
   final ClassroomService _classroomService = ClassroomService();
   bool _isDetecting = true;
   bool _isLoadingClassrooms = true;
+  bool _isSaving = false;
   String? _detectError;
   String? _classroomError;
   List<OcrDetectResult> _ocrResults = const <OcrDetectResult>[];
@@ -187,6 +192,7 @@ class _OcrScreenState extends State<OcrScreen>
     _nameController.text = name;
     _genderController.text = gender;
     _dobController.text = dob;
+    _studentId ??= _generateStudentId();
   }
 
   void _mapScoresToGrades(List<OcrDetectResult> results) {
@@ -256,6 +262,154 @@ class _OcrScreenState extends State<OcrScreen>
     }
   }
 
+  ClassroomItem? get _selectedClassroom {
+    final id = _selectedClassId;
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+
+    for (final classroom in _classrooms) {
+      if (classroom.id == id) {
+        return classroom;
+      }
+    }
+    return null;
+  }
+
+  List<OcrSaveSubjectItem> _buildSubjectsForSave() {
+    final List<OcrSaveSubjectItem> subjects = <OcrSaveSubjectItem>[];
+    final gradeYearMap = <int, int>{10: 1, 11: 2, 12: 3};
+
+    for (final entry in gradeYearMap.entries) {
+      final rows = _scoresByGrade[entry.key] ?? const <OcrScoreRow>[];
+      for (final row in rows) {
+        final subjectName = row.subject.trim();
+        final hk1 = row.hk1.trim();
+        final hk2 = row.hk2.trim();
+        final caNam = row.caNam.trim();
+
+        // Skip subject when either semester score is empty.
+        if (hk1.isEmpty || hk2.isEmpty) {
+          continue;
+        }
+
+        if (subjectName.isEmpty) {
+          continue;
+        }
+
+        subjects.add(
+          OcrSaveSubjectItem(
+            name: subjectName,
+            year: entry.value,
+            sem1Score: double.tryParse(hk1),
+            sem2Score: double.tryParse(hk2),
+            finalScore: double.tryParse(caNam),
+          ),
+        );
+      }
+    }
+
+    return subjects;
+  }
+
+  String _generateStudentId() {
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    final randomSuffix = _random.nextInt(10000).toString().padLeft(4, '0');
+    return 'student_$timestamp$randomSuffix';
+  }
+
+  String _resolveStudentId() {
+    _studentId ??= _generateStudentId();
+    return _studentId!;
+  }
+
+  Future<void> _saveReportCard() async {
+    if (_isSaving) {
+      return;
+    }
+
+    final selectedClassroom = _selectedClassroom;
+    if (selectedClassroom == null) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Thieu thong tin',
+        message: 'Vui long chon lop truoc khi luu hoc ba.',
+      );
+      return;
+    }
+
+    final studentName = _nameController.text.trim();
+    if (studentName.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Thieu thong tin',
+        message: 'Vui long nhap ten hoc sinh.',
+      );
+      return;
+    }
+
+    final subjects = _buildSubjectsForSave();
+    if (subjects.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Du lieu khong hop le',
+        message: 'Khong co mon hop le de luu. Can it nhat HK1 hoac HK2.',
+      );
+      return;
+    }
+
+    final request = OcrSaveFullReportCardRequest(
+      studentId: _resolveStudentId(),
+      studentName: studentName,
+      studentDob: _dobController.text.trim(),
+      studentGender: _genderController.text.trim(),
+      classId: selectedClassroom.id,
+      schoolYear: selectedClassroom.classYear,
+      subjects: subjects,
+    );
+
+    setState(() => _isSaving = true);
+
+    try {
+      final response = await _ocrService.saveFullReportCard(request: request);
+      if (!mounted) return;
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Luu thanh cong',
+        message: response.message.isEmpty
+            ? 'Luu hoc ba thanh cong.'
+            : response.message,
+        showAction: false,
+        autoDismissDuration: const Duration(milliseconds: 1400),
+        barrierDismissible: false,
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const DetailHbaScreen(),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      await AppNoticeModal.showError(
+        context,
+        message: e.message,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      await AppNoticeModal.showError(
+        context,
+        message: 'Luu hoc ba that bai. Vui long thu lai.',
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String? firstPath = widget.imageInputs.isEmpty
@@ -322,13 +476,7 @@ class _OcrScreenState extends State<OcrScreen>
                           ],
                         ),
                         child: TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const DetailHbaScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: _isSaving ? null : _saveReportCard,
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
@@ -339,7 +487,18 @@ class _OcrScreenState extends State<OcrScreen>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: const Text(AppTexts.preOcrConfirm),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(AppTexts.preOcrConfirm),
                         ),
                       ),
                     ),

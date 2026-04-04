@@ -7,6 +7,7 @@ import 'package:edu_app_flutter/constants/api_endpoints.dart';
 import 'package:edu_app_flutter/models/app_loading_model.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:http/http.dart' as http;
 
 class OcrService {
@@ -14,6 +15,7 @@ class OcrService {
 
   final http.Client _client;
   static const Duration _detectTimeout = Duration(seconds: 360);
+  static const Duration _saveTimeout = Duration(seconds: 30);
 
   Future<List<OcrDetectResult>> detectReportCard({
     required List<OcrDetectImageInput> images,
@@ -86,6 +88,58 @@ class OcrService {
       }
 
       return allResults;
+    });
+  }
+
+  Future<OcrSaveFullReportCardResponse> saveFullReportCard({
+    required OcrSaveFullReportCardRequest request,
+  }) async {
+    return AppLoadingModel.instance.track(() async {
+      final uid = (AuthSession.instance.uid ?? '').trim();
+      if (uid.isEmpty) {
+        throw const ApiException(
+          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        );
+      }
+
+      final uri = Uri.parse(
+        ApiConfig.endpoint(ApiEndpoints.ocrSaveFullReportCard),
+      );
+
+      late final http.Response response;
+      try {
+        response = await _client
+            .post(
+              uri,
+              headers: {
+                'Authorization': 'Bearer $uid',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode(request.toJson()),
+            )
+            .timeout(_saveTimeout);
+      } on SocketException {
+        throw ApiException(
+          message:
+              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        );
+      } on TimeoutException {
+        throw const ApiException(
+          message: 'Ket noi server bi timeout. Vui long thu lai.',
+        );
+      } on http.ClientException catch (e) {
+        throw ApiException(message: 'Loi ket noi: ${e.message}');
+      }
+
+      final bodyMap = _decodeJsonMap(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          message: _extractErrorMessage(bodyMap),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return OcrSaveFullReportCardResponse.fromJson(bodyMap);
     });
   }
 

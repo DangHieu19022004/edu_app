@@ -153,3 +153,95 @@ class OcrDetectResult {
     );
   }
 }
+
+class OcrSaveSubjectItem {
+  const OcrSaveSubjectItem({
+    required this.name,
+    required this.year,
+    required this.sem1Score,
+    required this.sem2Score,
+    required this.finalScore,
+  });
+
+  final String name;
+  final int year;
+  final double? sem1Score;
+  final double? sem2Score;
+  final double? finalScore;
+
+  Map<String, dynamic> toJson() {
+    double? _valueForYear(int targetYear, double? value) {
+      return year == targetYear ? value : null;
+    }
+
+    return {
+      'name': name,
+      'year': year,
+      'year1_sem1_score': _valueForYear(1, sem1Score),
+      'year1_sem2_score': _valueForYear(1, sem2Score),
+      'year1_final_score': _valueForYear(1, finalScore),
+      'year2_sem1_score': _valueForYear(2, sem1Score),
+      'year2_sem2_score': _valueForYear(2, sem2Score),
+      'year2_final_score': _valueForYear(2, finalScore),
+      'year3_sem1_score': _valueForYear(3, sem1Score),
+      'year3_sem2_score': _valueForYear(3, sem2Score),
+      'year3_final_score': _valueForYear(3, finalScore),
+    };
+  }
+}
+
+class OcrSaveFullReportCardRequest {
+  const OcrSaveFullReportCardRequest({
+    required this.studentId,
+    required this.studentName,
+    required this.studentDob,
+    required this.studentGender,
+    required this.classId,
+    required this.schoolYear,
+    required this.subjects,
+  });
+
+  final String studentId;
+  final String studentName;
+  final String studentDob;
+  final String studentGender;
+  final String classId;
+  final String schoolYear;
+  final List<OcrSaveSubjectItem> subjects;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'student': {
+        'id': studentId,
+        'name': studentName,
+        'dob': studentDob,
+        'gender': studentGender,
+        'address': '',
+        'father_name': '',
+        'mother_name': '',
+        'phone': '',
+        'parents_email': '',
+        'class_id': classId,
+        'ethnicity': '',
+        'birthplace': '',
+      },
+      'report_card': {
+        'class_id': classId,
+        'school_year': schoolYear,
+      },
+      'subjects': subjects.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class OcrSaveFullReportCardResponse {
+  const OcrSaveFullReportCardResponse({required this.message});
+
+  final String message;
+
+  factory OcrSaveFullReportCardResponse.fromJson(Map<String, dynamic> json) {
+    return OcrSaveFullReportCardResponse(
+      message: (json['message'] ?? '').toString(),
+    );
+  }
+}
