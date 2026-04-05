@@ -45,9 +45,9 @@ class OcrService {
         late final http.StreamedResponse streamed;
         try {
           streamed = await _client.send(request).timeout(_detectTimeout);
-          final response = await http.Response.fromStream(streamed).timeout(
-            _detectTimeout,
-          );
+          final response = await http.Response.fromStream(
+            streamed,
+          ).timeout(_detectTimeout);
 
           Map<String, dynamic> bodyMap;
           try {
@@ -171,12 +171,9 @@ class OcrService {
 
       late final http.Response response;
       try {
-        response = await _client.get(
-          uri,
-          headers: {
-            'Authorization': 'Bearer $uid',
-          },
-        ).timeout(_saveTimeout);
+        response = await _client
+            .get(uri, headers: {'Authorization': 'Bearer $uid'})
+            .timeout(_saveTimeout);
       } on SocketException {
         throw ApiException(
           message:
@@ -199,6 +196,61 @@ class OcrService {
       }
 
       return OcrFullReportCardResponse.fromJson(bodyMap);
+    });
+  }
+
+  Future<String> deleteFullReportCard({required String reportCardId}) async {
+    return AppLoadingModel.instance.track(() async {
+      final uid = (AuthSession.instance.uid ?? '').trim();
+      if (uid.isEmpty) {
+        throw const ApiException(
+          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        );
+      }
+
+      final trimmedReportCardId = reportCardId.trim();
+      if (trimmedReportCardId.isEmpty) {
+        throw const ApiException(message: 'Khong tim thay report_card_id.');
+      }
+
+      final base = Uri.parse(
+        ApiConfig.endpoint(ApiEndpoints.ocrDeleteFullReportCard),
+      );
+      final uri = base.replace(
+        queryParameters: {...base.queryParameters, 'id': trimmedReportCardId},
+      );
+
+      late final http.Response response;
+      try {
+        response = await _client
+            .delete(uri, headers: {'Authorization': 'Bearer $uid'})
+            .timeout(_saveTimeout);
+      } on SocketException {
+        throw ApiException(
+          message:
+              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        );
+      } on TimeoutException {
+        throw const ApiException(
+          message: 'Ket noi server bi timeout. Vui long thu lai.',
+        );
+      } on http.ClientException catch (e) {
+        throw ApiException(message: 'Loi ket noi: ${e.message}');
+      }
+
+      final bodyMap = _decodeJsonMap(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          message: _extractErrorMessage(bodyMap),
+          statusCode: response.statusCode,
+        );
+      }
+
+      final message = bodyMap['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+      return 'Xoa hoc ba thanh cong';
     });
   }
 

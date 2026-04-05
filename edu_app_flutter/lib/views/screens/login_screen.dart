@@ -54,9 +54,7 @@ class _TopIllustration extends StatelessWidget {
     return Container(
       height: 120,
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-      ),
+      decoration: const BoxDecoration(color: AppColors.white),
       child: Stack(
         children: [
           Align(
@@ -125,13 +123,14 @@ class _LoginCardState extends State<_LoginCard> {
     }
 
     if (_loginController.status == LoginStatus.success) {
-      final successMessage = _loginController.response?.message.isNotEmpty == true
+      final successMessage =
+          _loginController.response?.message.isNotEmpty == true
           ? _loginController.response!.message
           : (_loginController.googleResponse?.message.isNotEmpty == true
-            ? _loginController.googleResponse!.message
-            : (_loginController.facebookResponse?.message.isNotEmpty == true
-              ? _loginController.facebookResponse!.message
-              : 'Chao mung ban quay tro lai voi EduTeacher.'));
+                ? _loginController.googleResponse!.message
+                : (_loginController.facebookResponse?.message.isNotEmpty == true
+                      ? _loginController.facebookResponse!.message
+                      : 'Chao mung ban quay tro lai voi EduTeacher.'));
 
       await AppNoticeModal.showSuccess(
         context,
@@ -317,9 +316,7 @@ class _LoginCardState extends State<_LoginCard> {
                 });
               },
               icon: Icon(
-                _obscurePassword
-                    ? AppIcons.visibility
-                    : AppIcons.visibilityOff,
+                _obscurePassword ? AppIcons.visibility : AppIcons.visibilityOff,
                 color: AppColors.inputIcon,
               ),
             ),
@@ -336,7 +333,10 @@ class _LoginCardState extends State<_LoginCard> {
                       _rememberMe = value ?? false;
                     });
                   },
-                  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                  visualDensity: const VisualDensity(
+                    horizontal: -4,
+                    vertical: -4,
+                  ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6),
@@ -400,7 +400,10 @@ class _LoginCardState extends State<_LoginCard> {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('G', style: TextStyle(fontSize: 30, color: Color(0xFFDB4437))),
+                Text(
+                  'G',
+                  style: TextStyle(fontSize: 30, color: Color(0xFFDB4437)),
+                ),
                 SizedBox(width: 12),
                 Text(AppTexts.continueWithGoogle),
               ],
@@ -518,15 +521,23 @@ class _InputField extends StatelessWidget {
           fontSize: fontSize,
           fontWeight: FontWeight.w500,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: const BorderSide(color: AppColors.inputBorder, width: 1.2),
+          borderSide: const BorderSide(
+            color: AppColors.inputBorder,
+            width: 1.2,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide:
-              const BorderSide(color: AppColors.inputBorderFocus, width: 1.6),
+          borderSide: const BorderSide(
+            color: AppColors.inputBorderFocus,
+            width: 1.6,
+          ),
         ),
       ),
     );

@@ -61,7 +61,10 @@ class _SigninScreenState extends State<SigninScreen> {
     final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+    if (fullName.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty) {
       await AppNoticeModal.showError(
         context,
         message: 'Vui long nhap day du thong tin',
@@ -90,7 +93,8 @@ class _SigninScreenState extends State<SigninScreen> {
       context,
       type: AppNoticeType.info,
       title: 'Facebook login',
-      message: 'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
+      message:
+          'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
     );
   }
 
@@ -264,9 +268,10 @@ class _SigninScreenState extends State<SigninScreen> {
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.4,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     )
                                   : const Text(AppTexts.createAccount),
@@ -281,7 +286,10 @@ class _SigninScreenState extends State<SigninScreen> {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
-                        side: const BorderSide(color: Color(0xFFD4DDE8), width: 1.1),
+                        side: const BorderSide(
+                          color: Color(0xFFD4DDE8),
+                          width: 1.1,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -312,7 +320,10 @@ class _SigninScreenState extends State<SigninScreen> {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
-                        side: const BorderSide(color: Color(0xFFD4DDE8), width: 1.1),
+                        side: const BorderSide(
+                          color: Color(0xFFD4DDE8),
+                          width: 1.1,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -394,26 +405,26 @@ class _SigninHero extends StatelessWidget {
     return Column(
       children: [
         Align(
-            child: Container(
+          child: Container(
               width: 118,
-              height: 118,
-              child: Image.asset(
-                _illustrationAsset,
+            height: 118,
+            child: Image.asset(
+              _illustrationAsset,
                 width: double.infinity,
                 height: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const DecoratedBox(
-                  decoration: BoxDecoration(color: Color(0x00000000)),
-                  child: Center(
-                    child: Icon(
-                      AppIcons.schoolOutlined,
-                      size: 56,
-                      color: Color.fromARGB(255, 255, 255, 255),
-                    ),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const DecoratedBox(
+                decoration: BoxDecoration(color: Color(0x00000000)),
+                child: Center(
+                  child: Icon(
+                    AppIcons.schoolOutlined,
+                    size: 56,
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
               ),
             ),
+          ),
           ),
         SizedBox(height: 10),
         Text(
@@ -490,15 +501,20 @@ class _SignInputField extends StatelessWidget {
               fontSize: AppFontSizes.inputHint,
               fontWeight: FontWeight.w500,
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AppColors.inputBorderFocus, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.inputBorderFocus,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -516,9 +532,7 @@ class _DividerLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(
-          child: Divider(color: AppColors.divider, thickness: 1),
-        ),
+        const Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
@@ -530,9 +544,7 @@ class _DividerLabel extends StatelessWidget {
             ),
           ),
         ),
-        const Expanded(
-          child: Divider(color: AppColors.divider, thickness: 1),
-        ),
+        const Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
       ],
     );
   }

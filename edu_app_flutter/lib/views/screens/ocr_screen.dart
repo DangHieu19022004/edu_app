@@ -301,9 +301,9 @@ class _OcrScreenState extends State<OcrScreen>
           OcrSaveSubjectItem(
             name: subjectName,
             year: entry.value,
-            sem1Score: double.tryParse(hk1),
-            sem2Score: double.tryParse(hk2),
-            finalScore: double.tryParse(caNam),
+            sem1Score: hk1,
+            sem2Score: hk2,
+            finalScore: caNam.isEmpty ? null : caNam,
           ),
         );
       }
@@ -389,7 +389,7 @@ class _OcrScreenState extends State<OcrScreen>
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => const DetailHbaScreen(),
+          builder: (_) => DetailHbaScreen(studentId: _resolveStudentId()),
         ),
       );
     } on ApiException catch (e) {

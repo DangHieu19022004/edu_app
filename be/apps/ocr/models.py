@@ -1,14 +1,9 @@
 import uuid
-from mongoengine import (
-    BooleanField,
-    DateField,
-    Document,
-    EmbeddedDocument,
-    EmbeddedDocumentListField,
-    FloatField,
-    IntField,
-    StringField,
-)
+
+from mongoengine import (BooleanField, DateField, Document, EmbeddedDocument,
+                         EmbeddedDocumentListField, FloatField, IntField,
+                         StringField)
+
 
 # --- Bảng Students ---
 class StudentInfo(Document):
