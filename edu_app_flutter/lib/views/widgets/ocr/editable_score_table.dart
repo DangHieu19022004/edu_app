@@ -7,11 +7,13 @@ class EditableScoreTable extends StatefulWidget {
   const EditableScoreTable({
     super.key,
     required this.rows,
-    required this.onChanged,
+    this.onChanged,
+    this.readOnly = false,
   });
 
   final List<OcrScoreRow> rows;
-  final ValueChanged<List<OcrScoreRow>> onChanged;
+  final ValueChanged<List<OcrScoreRow>>? onChanged;
+  final bool readOnly;
 
   @override
   State<EditableScoreTable> createState() => _EditableScoreTableState();
@@ -106,6 +108,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
             _EditableCell(
               flex: 4,
               initialValue: row.subject,
+              readOnly: widget.readOnly,
               onChanged: (value) {
                 _updateRow(index, row.copyWith(subject: value));
               },
@@ -113,6 +116,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
             _EditableCell(
               flex: 2,
               initialValue: row.hk1,
+              readOnly: widget.readOnly,
               onChanged: (value) {
                 _updateRow(index, row.copyWith(hk1: value));
               },
@@ -120,6 +124,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
             _EditableCell(
               flex: 2,
               initialValue: row.hk2,
+              readOnly: widget.readOnly,
               onChanged: (value) {
                 _updateRow(index, row.copyWith(hk2: value));
               },
@@ -127,6 +132,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
             _EditableCell(
               flex: 2,
               initialValue: row.caNam,
+              readOnly: widget.readOnly,
               onChanged: (value) {
                 _updateRow(index, row.copyWith(caNam: value));
               },
@@ -138,8 +144,11 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
   }
 
   void _updateRow(int index, OcrScoreRow next) {
+    if (widget.readOnly) {
+      return;
+    }
     _rows[index] = next;
-    widget.onChanged(List<OcrScoreRow>.from(_rows));
+    widget.onChanged?.call(List<OcrScoreRow>.from(_rows));
   }
 }
 
@@ -171,14 +180,45 @@ class _EditableCell extends StatelessWidget {
     required this.flex,
     required this.initialValue,
     required this.onChanged,
+    required this.readOnly,
   });
 
   final int flex;
   final String initialValue;
   final ValueChanged<String> onChanged;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
+    if (readOnly) {
+      return Expanded(
+        flex: flex,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              border: Border.fromBorderSide(
+                BorderSide(color: Color(0xFFD6DFEE)),
+              ),
+            ),
+            child: Text(
+              initialValue,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: AppFontSizes.dashboardBody,
+                fontWeight: FontWeight.w600,
+                color: AppColors.title,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Expanded(
       flex: flex,
       child: Padding(

@@ -98,7 +98,7 @@ class AppTexts {
     // Detail HBA Screen
     // ------------------------------
     static const String detailHbaTitle = 'Chi tiết bảng điểm';
-    static const String detailHbaSubtitle = 'Học kỳ I • 2023-2024';
+    static const String detailHbaSubtitle = 'Kết quả chi tiết';
     static const String detailResultTitle = 'Kết quả chi tiết';
     static const String detailTeacherComment = 'Nhận xét của giáo viên';
     static const String detailAnalyzeAi = 'Phân tích AI';

@@ -3,7 +3,9 @@ import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/classroom_service.dart';
+import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
+import 'package:edu_app_flutter/views/screens/detail_academic_transcript_screen.dart';
 import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
@@ -20,6 +22,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   int _selectedClassIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   final ClassroomService _classroomService = ClassroomService();
+  final OcrService _ocrService = OcrService();
 
   final List<ClassroomItem> _classrooms = [];
   final List<StudentInClassItem> _students = [];
@@ -407,36 +410,201 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
   }
 
   Widget _buildStudentCards(List<StudentInClassItem> students) {
+    final selectedClassroom = (_classrooms.isNotEmpty &&
+            _selectedClassIndex >= 0 &&
+            _selectedClassIndex < _classrooms.length)
+        ? _classrooms[_selectedClassIndex]
+        : null;
+
     return Column(
       children: students.map((student) {
+        final schoolDisplay = student.school.trim().isNotEmpty
+            ? student.school
+            : (selectedClassroom?.schoolName ?? '');
+
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
+          child: Material(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFDCE5F4)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                student.name.isEmpty ? 'Hoc sinh' : student.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.title,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => _openStudentDetail(student),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFDCE5F4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            student.name.isEmpty ? 'Hoc sinh' : student.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.title,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Sua hoc ba',
+                          onPressed: () => _openStudentDetail(student),
+                          icon: const Icon(
+                            Icons.edit_rounded,
+                            size: 20,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Xoa hoc ba',
+                          onPressed: () => _confirmAndDeleteStudent(student),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _infoRow('Gioi tinh', student.gender),
+                    _infoRow('Ngay sinh', student.dob),
+                    _infoRow('Dien thoai', student.phone),
+                    _infoRow('Truong', schoolDisplay),
+                  ],
                 ),
               ),
-              const SizedBox(height: 6),
-              _infoRow('Gioi tinh', student.gender),
-              _infoRow('Ngay sinh', student.dob),
-              _infoRow('Dien thoai', student.phone),
-              _infoRow('Truong', student.school),
-            ],
+            ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Future<void> _openStudentDetail(StudentInClassItem student) async {
+    final studentId = student.id.trim();
+    if (studentId.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Khong tim thay hoc sinh',
+        message: 'Ban ghi hoc sinh khong co student_id hop le.',
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DetailHbaScreen(studentId: studentId),
+      ),
+    );
+  }
+
+  Future<void> _confirmAndDeleteStudent(StudentInClassItem student) async {
+    final shouldDelete = await _showDeleteStudentConfirm(student.name);
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+
+    final studentId = student.id.trim();
+    if (studentId.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Khong tim thay hoc sinh',
+        message: 'Ban ghi hoc sinh khong co student_id hop le.',
+      );
+      return;
+    }
+
+    try {
+      final fullData = await _ocrService.getFullReportCard(studentId: studentId);
+      final reportCardId = fullData.reportCard?.id.trim() ?? '';
+
+      if (reportCardId.isEmpty) {
+        if (!mounted) {
+          return;
+        }
+        await AppNoticeModal.showError(
+          context,
+          title: 'Khong co hoc ba de xoa',
+          message: 'Hoc sinh nay chua co hoc ba da luu.',
+        );
+        return;
+      }
+
+      final message = await _ocrService.deleteFullReportCard(
+        reportCardId: reportCardId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      await _refreshStudentsForSelectedClass();
+
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Xoa hoc ba thanh cong',
+        message: message,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showError(
+        context,
+        message: e.message,
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showError(
+        context,
+        message: 'Khong the xoa hoc ba. Vui long thu lai.',
+      );
+    }
+  }
+
+  Future<bool?> _showDeleteStudentConfirm(String studentName) {
+    final displayName = studentName.trim();
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Xac nhan xoa hoc ba'),
+          content: Text(
+            'Ban co chac chan muon xoa hoc ba cua ${displayName.isEmpty ? 'hoc sinh nay' : displayName}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Huy'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Xoa'),
+            ),
+          ],
+        );
+      },
     );
   }
 

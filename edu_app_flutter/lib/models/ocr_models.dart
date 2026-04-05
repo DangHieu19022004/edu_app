@@ -165,12 +165,12 @@ class OcrSaveSubjectItem {
 
   final String name;
   final int year;
-  final double? sem1Score;
-  final double? sem2Score;
-  final double? finalScore;
+  final String? sem1Score;
+  final String? sem2Score;
+  final String? finalScore;
 
   Map<String, dynamic> toJson() {
-    double? _valueForYear(int targetYear, double? value) {
+    String? _valueForYear(int targetYear, String? value) {
       return year == targetYear ? value : null;
     }
 
@@ -242,6 +242,160 @@ class OcrSaveFullReportCardResponse {
   factory OcrSaveFullReportCardResponse.fromJson(Map<String, dynamic> json) {
     return OcrSaveFullReportCardResponse(
       message: (json['message'] ?? '').toString(),
+    );
+  }
+}
+
+class OcrReportCardStudent {
+  const OcrReportCardStudent({
+    required this.id,
+    required this.name,
+    required this.dob,
+    required this.gender,
+    required this.phone,
+    required this.school,
+    required this.classId,
+    required this.academicPerformance,
+    required this.conduct,
+  });
+
+  final String id;
+  final String name;
+  final String dob;
+  final String gender;
+  final String phone;
+  final String school;
+  final String classId;
+  final String academicPerformance;
+  final String conduct;
+
+  factory OcrReportCardStudent.fromJson(Map<String, dynamic> json) {
+    return OcrReportCardStudent(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      dob: (json['dob'] ?? '').toString(),
+      gender: (json['gender'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString(),
+      school: (json['school'] ?? '').toString(),
+      classId: (json['class_id'] ?? '').toString(),
+      academicPerformance: (json['academicPerformance'] ?? '').toString(),
+      conduct: (json['conduct'] ?? '').toString(),
+    );
+  }
+}
+
+class OcrReportCardInfo {
+  const OcrReportCardInfo({
+    required this.id,
+    required this.schoolYear,
+    required this.teacherSigned,
+    required this.principalSigned,
+    required this.teacherComment,
+    required this.approvalDate,
+  });
+
+  final String id;
+  final String schoolYear;
+  final bool teacherSigned;
+  final bool principalSigned;
+  final String teacherComment;
+  final String approvalDate;
+
+  factory OcrReportCardInfo.fromJson(Map<String, dynamic> json) {
+    return OcrReportCardInfo(
+      id: (json['id'] ?? '').toString(),
+      schoolYear: (json['school_year'] ?? '').toString(),
+      teacherSigned: json['teacher_signed'] == true,
+      principalSigned: json['principal_signed'] == true,
+      teacherComment: (json['teacher_comment'] ?? '').toString(),
+      approvalDate: (json['approval_date'] ?? '').toString(),
+    );
+  }
+}
+
+class OcrReportCardClassSubject {
+  const OcrReportCardClassSubject({
+    required this.name,
+    required this.hk1,
+    required this.hk2,
+    required this.cn,
+  });
+
+  final String name;
+  final String hk1;
+  final String hk2;
+  final String cn;
+
+  factory OcrReportCardClassSubject.fromJson(Map<String, dynamic> json) {
+    return OcrReportCardClassSubject(
+      name: (json['name'] ?? '').toString(),
+      hk1: (json['hk1'] ?? '').toString(),
+      hk2: (json['hk2'] ?? '').toString(),
+      cn: (json['cn'] ?? '').toString(),
+    );
+  }
+}
+
+class OcrReportCardClassGroup {
+  const OcrReportCardClassGroup({
+    required this.className,
+    required this.subjects,
+  });
+
+  final String className;
+  final List<OcrReportCardClassSubject> subjects;
+
+  factory OcrReportCardClassGroup.fromJson(Map<String, dynamic> json) {
+    final dynamic rawSubjects = json['subjects'];
+    final subjects = rawSubjects is List
+        ? rawSubjects
+            .whereType<Map<String, dynamic>>()
+            .map(OcrReportCardClassSubject.fromJson)
+            .toList()
+        : const <OcrReportCardClassSubject>[];
+
+    return OcrReportCardClassGroup(
+      className: (json['class'] ?? '').toString(),
+      subjects: subjects,
+    );
+  }
+}
+
+class OcrFullReportCardResponse {
+  const OcrFullReportCardResponse({
+    required this.student,
+    required this.reportCard,
+    required this.classList,
+    required this.className,
+    required this.schoolName,
+  });
+
+  final OcrReportCardStudent student;
+  final OcrReportCardInfo? reportCard;
+  final List<OcrReportCardClassGroup> classList;
+  final String className;
+  final String schoolName;
+
+  factory OcrFullReportCardResponse.fromJson(Map<String, dynamic> json) {
+    final dynamic rawStudent = json['student'];
+    final dynamic rawReportCard = json['report_card'];
+    final dynamic rawClassList = json['classList'];
+
+    return OcrFullReportCardResponse(
+      student: rawStudent is Map<String, dynamic>
+          ? OcrReportCardStudent.fromJson(rawStudent)
+          : OcrReportCardStudent.fromJson(const <String, dynamic>{}),
+      reportCard: rawReportCard is Map<String, dynamic>
+          ? OcrReportCardInfo.fromJson(rawReportCard)
+          : null,
+      classList: rawClassList is List
+          ? rawClassList
+              .whereType<Map<String, dynamic>>()
+              .map(OcrReportCardClassGroup.fromJson)
+              .toList()
+          : const <OcrReportCardClassGroup>[],
+      className: (json['class_name'] ?? '').toString(),
+      schoolName: (json['school_name'] ?? '').toString(),
     );
   }
 }

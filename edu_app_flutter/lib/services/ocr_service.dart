@@ -143,6 +143,65 @@ class OcrService {
     });
   }
 
+  Future<OcrFullReportCardResponse> getFullReportCard({
+    required String studentId,
+  }) async {
+    return AppLoadingModel.instance.track(() async {
+      final uid = (AuthSession.instance.uid ?? '').trim();
+      if (uid.isEmpty) {
+        throw const ApiException(
+          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        );
+      }
+
+      final trimmedStudentId = studentId.trim();
+      if (trimmedStudentId.isEmpty) {
+        throw const ApiException(message: 'Khong tim thay student_id.');
+      }
+
+      final base = Uri.parse(
+        ApiConfig.endpoint(ApiEndpoints.ocrGetFullReportCard),
+      );
+      final uri = base.replace(
+        queryParameters: {
+          ...base.queryParameters,
+          'student_id': trimmedStudentId,
+        },
+      );
+
+      late final http.Response response;
+      try {
+        response = await _client.get(
+          uri,
+          headers: {
+            'Authorization': 'Bearer $uid',
+          },
+        ).timeout(_saveTimeout);
+      } on SocketException {
+        throw ApiException(
+          message:
+              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        );
+      } on TimeoutException {
+        throw const ApiException(
+          message: 'Ket noi server bi timeout. Vui long thu lai.',
+        );
+      } on http.ClientException catch (e) {
+        throw ApiException(message: 'Loi ket noi: ${e.message}');
+      }
+
+      final bodyMap = _decodeJsonMap(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          message: _extractErrorMessage(bodyMap),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return OcrFullReportCardResponse.fromJson(bodyMap);
+    });
+  }
+
   Map<String, dynamic> _decodeJsonMap(String body) {
     if (body.trim().isEmpty) {
       return <String, dynamic>{};
