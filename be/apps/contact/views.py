@@ -132,6 +132,7 @@ def send_email_now(request):
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def schedule_email(request):
     try:
         subject = request.data.get('subject')

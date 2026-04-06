@@ -104,7 +104,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+DEFAULT_FROM_EMAIL = "danghieu19022004@gmail.com"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

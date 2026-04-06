@@ -2,10 +2,12 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/models/contact_models.dart';
+import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/services/classroom_service.dart';
 import 'package:edu_app_flutter/services/contact_service.dart';
+import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 import 'package:edu_app_flutter/views/widgets/common_bottom_nav.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
@@ -21,6 +23,7 @@ class StudyReportScreen extends StatefulWidget {
 class _StudyReportScreenState extends State<StudyReportScreen> {
   final ContactService _contactService = ContactService();
   final ClassroomService _classroomService = ClassroomService();
+  final OcrService _ocrService = OcrService();
 
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _parentEmailController = TextEditingController();
@@ -45,6 +48,12 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   List<StudentInClassItem> _students = const <StudentInClassItem>[];
   String? _selectedClassId;
   String? _selectedStudentId;
+  String? _selectedScheduleClassId;
+  final Set<String> _selectedScheduleParentIds = <String>{};
+  bool _isGeneratingScheduleMessage = false;
+  final Map<String, StudentInClassItem> _studentDetailCache =
+      <String, StudentInClassItem>{};
+  final Map<String, String> _scoreSummaryCache = <String, String>{};
 
   String _resolveSchoolForParent(ParentItem parent) {
     final schoolFromApi = parent.studentSchool.trim();
@@ -68,6 +77,8 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   @override
   void initState() {
     super.initState();
+    _mailSubjectController.text = _buildScheduleSubjectPreviewTemplate();
+    _mailMessageController.text = _buildScheduleMessagePreviewTemplate();
     _loadClassroomsForContact();
     _loadParents();
     _loadHistory();
@@ -96,6 +107,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       setState(() {
         _classrooms = classrooms;
         _selectedClassId = nextClassId;
+        _selectedScheduleClassId = nextClassId;
         _selectedStudentId = null;
       });
 
@@ -197,7 +209,13 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _parents = items);
+      setState(() {
+        _parents = items;
+        _selectedScheduleParentIds.removeWhere(
+          (id) => !_parents.any((item) => item.id == id),
+        );
+      });
+      _refreshSchedulePreview();
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -312,30 +330,61 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
   Future<void> _scheduleEmail() async {
     final teacherId = (AuthSession.instance.uid ?? '').trim();
-    final subject = _mailSubjectController.text.trim();
-    final recipient = _mailRecipientController.text.trim();
-    final message = _mailMessageController.text.trim();
+    final subjectTemplate = _mailSubjectController.text.trim();
     final scheduledAt = _scheduledAt;
 
-    if (teacherId.isEmpty || subject.isEmpty || recipient.isEmpty || message.isEmpty || scheduledAt == null) {
+    if (teacherId.isEmpty ||
+        _selectedScheduleParentIds.isEmpty ||
+        scheduledAt == null) {
       await AppNoticeModal.showError(
         context,
-        message: 'Vui long nhap day du thong tin va thoi gian gui.',
+        message: 'Vui long chon lop, chon hoc sinh va nhap day du thong tin lap lich.',
       );
       return;
     }
 
     setState(() => _isScheduling = true);
     try {
-      final response = await _contactService.scheduleEmail(
-        request: ScheduleEmailRequest(
-          subject: subject,
-          recipient: recipient,
-          message: message,
-          scheduledTime: scheduledAt.toIso8601String(),
-          teacherId: teacherId,
-        ),
-      );
+      final selectedParents = _parents
+          .where((parent) => _selectedScheduleParentIds.contains(parent.id))
+          .toList();
+
+      int successCount = 0;
+      final failedTargets = <String>[];
+
+      for (final parent in selectedParents) {
+        final recipient = parent.email.trim();
+        if (recipient.isEmpty) {
+          final name = parent.studentName.trim().isEmpty
+              ? parent.studentId
+              : parent.studentName.trim();
+          failedTargets.add('$name (thieu email)');
+          continue;
+        }
+
+        try {
+          final message = await _buildScheduleMessageForParent(parent);
+          final subject = _buildScheduleSubjectForParent(
+            parent: parent,
+            subjectTemplate: subjectTemplate,
+          );
+          await _contactService.scheduleEmail(
+            request: ScheduleEmailRequest(
+              subject: subject,
+              recipient: recipient,
+              message: message,
+              scheduledTime: scheduledAt.toIso8601String(),
+              teacherId: teacherId,
+            ),
+          );
+          successCount += 1;
+        } catch (_) {
+          final name = parent.studentName.trim().isEmpty
+              ? parent.studentId
+              : parent.studentName.trim();
+          failedTargets.add(name);
+        }
+      }
 
       if (!mounted) {
         return;
@@ -345,17 +394,33 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       _mailRecipientController.clear();
       _mailMessageController.clear();
       _scheduledAt = null;
+      _selectedScheduleParentIds.clear();
+      _refreshSchedulePreview();
 
       await _loadHistory();
       if (!mounted) {
         return;
       }
 
-      await AppNoticeModal.showSuccess(
-        context,
-        title: 'Lap lich thanh cong',
-        message: response.message.isEmpty ? 'Da lap lich gui email.' : response.message,
-      );
+      if (successCount == 0) {
+        await AppNoticeModal.showError(
+          context,
+          message: 'Khong lap lich duoc email nao. Vui long kiem tra lai du lieu.',
+        );
+      } else if (failedTargets.isEmpty) {
+        await AppNoticeModal.showSuccess(
+          context,
+          title: 'Lap lich thanh cong',
+          message: 'Da lap lich $successCount email (moi email 1 request).',
+        );
+      } else {
+        await AppNoticeModal.showSuccess(
+          context,
+          title: 'Lap lich mot phan',
+          message:
+              'Da lap lich $successCount email. Khong thanh cong: ${failedTargets.join(', ')}',
+        );
+      }
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -374,6 +439,308 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         setState(() => _isScheduling = false);
       }
     }
+  }
+
+  Future<StudentInClassItem?> _resolveStudentDetailForParent(ParentItem parent) async {
+    final studentId = parent.studentId.trim();
+    if (studentId.isEmpty) {
+      return null;
+    }
+
+    final cached = _studentDetailCache[studentId];
+    if (cached != null) {
+      return cached;
+    }
+
+    for (final student in _students) {
+      if (student.id == studentId) {
+        _studentDetailCache[studentId] = student;
+        return student;
+      }
+    }
+
+    final className = parent.studentClass.trim().toLowerCase();
+    String? classId;
+    for (final classroom in _classrooms) {
+      if (classroom.name.trim().toLowerCase() == className) {
+        classId = classroom.id;
+        break;
+      }
+    }
+
+    if (classId == null || classId.isEmpty) {
+      return null;
+    }
+
+    try {
+      final students = await _classroomService.getStudentsByClass(classId: classId);
+      for (final student in students) {
+        _studentDetailCache[student.id] = student;
+        if (student.id == studentId) {
+          return student;
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
+
+  List<ParentItem> _scheduleParentsBySelectedClass() {
+    final className = _selectedScheduleClassName().trim().toLowerCase();
+    if (className.isEmpty) {
+      return const <ParentItem>[];
+    }
+
+    final filtered = _parents.where((parent) {
+      return parent.studentClass.trim().toLowerCase() == className;
+    }).toList();
+
+    filtered.sort((a, b) {
+      final aName = a.studentName.trim().toLowerCase();
+      final bName = b.studentName.trim().toLowerCase();
+      return aName.compareTo(bName);
+    });
+    return filtered;
+  }
+
+  String _selectedScheduleClassName() {
+    final classId = (_selectedScheduleClassId ?? '').trim();
+    if (classId.isEmpty) {
+      return '';
+    }
+    for (final classroom in _classrooms) {
+      if (classroom.id == classId) {
+        return classroom.name;
+      }
+    }
+    return '';
+  }
+
+  Future<void> _onScheduleClassSelected(String classId) async {
+    if (_selectedScheduleClassId == classId) {
+      return;
+    }
+
+    setState(() {
+      _selectedScheduleClassId = classId;
+      _selectedScheduleParentIds.clear();
+      _mailRecipientController.clear();
+      _mailMessageController.text = _buildScheduleMessagePreviewTemplate();
+    });
+
+    _mailSubjectController.text = _buildScheduleSubjectPreviewTemplate();
+
+    _refreshSchedulePreview();
+  }
+
+  Future<void> _toggleScheduleParentSelection({
+    required String parentId,
+    required bool selected,
+  }) async {
+    if (selected) {
+      _selectedScheduleParentIds.add(parentId);
+    } else {
+      _selectedScheduleParentIds.remove(parentId);
+    }
+    setState(() {});
+    _refreshSchedulePreview();
+  }
+
+  void _refreshSchedulePreview() {
+    final selectedParents = _parents
+        .where((parent) => _selectedScheduleParentIds.contains(parent.id))
+        .toList();
+    final recipients = <String>{};
+    for (final parent in selectedParents) {
+      final email = parent.email.trim();
+      if (email.isNotEmpty) {
+        recipients.add(email);
+      }
+    }
+
+    _mailRecipientController.text = recipients.join(', ');
+    if (_mailSubjectController.text.trim().isEmpty) {
+      _mailSubjectController.text = _buildScheduleSubjectPreviewTemplate();
+    }
+    _mailMessageController.text = _buildScheduleMessagePreviewTemplate();
+  }
+
+  String _buildScheduleSubjectPreviewTemplate() {
+    final className = _selectedScheduleClassName().trim();
+    if (className.isNotEmpty) {
+      return 'Thong bao hoc tap lop $className - [TEN HOC SINH]';
+    }
+    return 'Thong bao hoc tap - [TEN HOC SINH]';
+  }
+
+  String _buildScheduleSubjectForParent({
+    required ParentItem parent,
+    required String subjectTemplate,
+  }) {
+    final studentName = parent.studentName.trim().isNotEmpty
+        ? parent.studentName.trim()
+        : parent.studentId;
+    final className = parent.studentClass.trim();
+
+    String subject = subjectTemplate.trim();
+    if (subject.isEmpty) {
+      if (className.isNotEmpty) {
+        return 'Thong bao hoc tap lop $className - $studentName';
+      }
+      return 'Thong bao hoc tap - $studentName';
+    }
+
+    subject = subject
+        .replaceAll('[TEN HOC SINH]', studentName)
+        .replaceAll('[TEN LOP]', className.isEmpty ? '--' : className);
+    return subject;
+  }
+
+  String _buildScheduleMessagePreviewTemplate() {
+    return [
+      'Mau noi dung se gui cho tung phu huynh:',
+      '',
+      'Kinh gui Quy phu huynh [TEN PHU HUYNH],',
+      '',
+      'Nha truong gui thong tin hoc tap cua hoc sinh [TEN HOC SINH]:',
+      '- Lop: [TEN LOP]',
+      '- Truong: [TEN TRUONG]',
+      '- Gioi tinh: [GIOI TINH]',
+      '- Ngay sinh: [NGAY SINH]',
+      '- So dien thoai: [SO DIEN THOAI]',
+      '',
+      'Bang diem:',
+      '- [NAM HOC] [MON]: HK1 ..., HK2 ..., Ca nam ...',
+      '',
+      'Quy phu huynh vui long theo doi va phoi hop cung giao vien chu nhiem.',
+      'Tran trong.',
+    ].join('\n');
+  }
+
+  Future<String> _buildScheduleMessageForParent(ParentItem parent) async {
+    final student = await _resolveStudentDetailForParent(parent);
+    final scoreSummary = await _buildScoreSummaryForEmail(parent.studentId);
+
+    final studentName = parent.studentName.trim().isNotEmpty
+        ? parent.studentName.trim()
+        : (student?.name.trim() ?? parent.studentId);
+    final className = parent.studentClass.trim();
+    final schoolName = _resolveSchoolForParent(parent);
+    final gender = student?.gender.trim() ?? '';
+    final dob = student?.dob.trim() ?? '';
+    final phone = student?.phone.trim() ?? '';
+
+    return [
+      'Kinh gui quy phu huynh ${parent.parentName.trim().isEmpty ? '' : parent.parentName.trim()},',
+      '',
+      'Nha truong gui thong tin hoc sinh nhu sau:',
+      '- Ho ten hoc sinh: $studentName',
+      '- Lop: ${className.isEmpty ? '--' : className}',
+      '- Truong: ${schoolName.isEmpty ? '--' : schoolName}',
+      '- Gioi tinh: ${gender.isEmpty ? '--' : gender}',
+      '- Ngay sinh: ${dob.isEmpty ? '--' : dob}',
+      '- So dien thoai hoc sinh: ${phone.isEmpty ? '--' : phone}',
+      '',
+      'Bang diem:',
+      scoreSummary,
+      '',
+      'Quy phu huynh vui long theo doi va phoi hop cung giao vien chu nhiem.',
+      'Tran trong.',
+    ].join('\n');
+  }
+
+  Future<String> _buildScoreSummaryForEmail(String studentId) async {
+    final normalizedStudentId = studentId.trim();
+    if (normalizedStudentId.isEmpty) {
+      return 'Chua co student_id de lay bang diem.';
+    }
+
+    final cached = _scoreSummaryCache[normalizedStudentId];
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    try {
+      final report = await _ocrService.getFullReportCard(
+        studentId: normalizedStudentId,
+      );
+
+      final classList = List<OcrReportCardClassGroup>.from(report.classList);
+      classList.sort((a, b) {
+        final byYear = _extractYearSortKey(a.className)
+            .compareTo(_extractYearSortKey(b.className));
+        if (byYear != 0) {
+          return byYear;
+        }
+        return a.className.toLowerCase().compareTo(b.className.toLowerCase());
+      });
+
+      final lines = <String>[];
+      if (classList.isEmpty) {
+        lines.add('- Chua co du lieu bang diem.');
+      } else {
+        for (final classGroup in classList) {
+          final title = classGroup.className.trim().isEmpty
+              ? 'Nam hoc khong xac dinh'
+              : classGroup.className.trim();
+          lines.add('• $title');
+
+          final subjects = List<OcrReportCardClassSubject>.from(
+            classGroup.subjects,
+          )
+            ..sort(
+              (x, y) =>
+                  x.name.toLowerCase().compareTo(y.name.toLowerCase()),
+            );
+
+          if (subjects.isEmpty) {
+            lines.add('  - Chua co mon hoc.');
+            continue;
+          }
+
+          for (final subject in subjects) {
+            final subjectName = subject.name.trim().isEmpty
+                ? 'Mon hoc'
+                : subject.name.trim();
+            lines.add(
+              '  - $subjectName: HK1 ${_displayScore(subject.hk1)} | HK2 ${_displayScore(subject.hk2)} | Ca nam ${_displayScore(subject.cn)}',
+            );
+          }
+        }
+      }
+
+      final summary = lines.join('\n');
+      _scoreSummaryCache[normalizedStudentId] = summary;
+      return summary;
+    } on ApiException {
+      return '- Khong lay duoc bang diem tu he thong vao luc nay.';
+    } catch (_) {
+      return '- Khong lay duoc bang diem tu he thong vao luc nay.';
+    }
+  }
+
+  String _displayScore(String value) {
+    final normalized = value.trim();
+    return normalized.isEmpty ? '--' : normalized;
+  }
+
+  int _extractYearSortKey(String className) {
+    final matches = RegExp(r'\d{4}').allMatches(className);
+    if (matches.isNotEmpty) {
+      final first = int.tryParse(matches.first.group(0) ?? '');
+      if (first != null) {
+        return first;
+      }
+    }
+
+    final classNumMatch = RegExp(r'\d{1,2}').firstMatch(className);
+    final classNum = int.tryParse(classNumMatch?.group(0) ?? '');
+    if (classNum != null) {
+      return 2000 + classNum;
+    }
+    return 9999;
   }
 
   @override
@@ -717,15 +1084,232 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Chon lop',
+            style: TextStyle(
+              fontSize: AppFontSizes.dashboardCaption,
+              color: AppColors.subtitle,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingClasses)
+            const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (_classrooms.isEmpty)
+            const Text(
+              'Chua co lop. Vui long tao lop truoc.',
+              style: TextStyle(
+                fontSize: AppFontSizes.dashboardCaption,
+                color: AppColors.subtitle,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _classrooms.map((classroom) {
+                final selected = _selectedScheduleClassId == classroom.id;
+                return ChoiceChip(
+                  label: Text(classroom.name),
+                  selected: selected,
+                  onSelected: (_) {
+                    _onScheduleClassSelected(classroom.id);
+                  },
+                  showCheckmark: false,
+                  selectedColor: AppColors.primary,
+                  labelStyle: TextStyle(
+                    color: selected ? AppColors.white : AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  side: const BorderSide(color: AppColors.primary),
+                  backgroundColor: AppColors.white,
+                );
+              }).toList(),
+            ),
+          const SizedBox(height: 10),
+          const Text(
+            'Chon hoc sinh va email phu huynh',
+            style: TextStyle(
+              fontSize: AppFontSizes.dashboardCaption,
+              color: AppColors.subtitle,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingParents)
+            const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if ((_selectedScheduleClassId ?? '').isEmpty)
+            const Text(
+              'Vui long chon lop de hien thi danh sach hoc sinh.',
+              style: TextStyle(
+                fontSize: AppFontSizes.dashboardCaption,
+                color: AppColors.subtitle,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else if (_scheduleParentsBySelectedClass().isEmpty)
+            const Text(
+              'Lop nay chua co lien he phu huynh.',
+              style: TextStyle(
+                fontSize: AppFontSizes.dashboardCaption,
+                color: AppColors.subtitle,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFDCE5F4)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEFF4FF),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        SizedBox(width: 28),
+                        Expanded(
+                          flex: 5,
+                          child: Text(
+                            'Ten hoc sinh',
+                            style: TextStyle(
+                              fontSize: AppFontSizes.dashboardCaption,
+                              color: AppColors.title,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 6,
+                          child: Text(
+                            'Email phu huynh',
+                            style: TextStyle(
+                              fontSize: AppFontSizes.dashboardCaption,
+                              color: AppColors.title,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ..._scheduleParentsBySelectedClass().map((parent) {
+                    final checked = _selectedScheduleParentIds.contains(
+                      parent.id,
+                    );
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFDCE5F4)),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: checked,
+                            onChanged: (value) {
+                              _toggleScheduleParentSelection(
+                                parentId: parent.id,
+                                selected: value == true,
+                              );
+                            },
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: Text(
+                              parent.studentName.trim().isEmpty
+                                  ? parent.studentId
+                                  : parent.studentName,
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.dashboardCaption,
+                                color: AppColors.subtitle,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 6,
+                            child: Text(
+                              parent.email,
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.dashboardCaption,
+                                color: AppColors.subtitle,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          if (_isGeneratingScheduleMessage)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Dang tao noi dung email tu dong...',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.dashboardCaption,
+                      color: AppColors.subtitle,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 10),
           _buildInput(_mailSubjectController, 'Tieu de'),
           const SizedBox(height: 10),
-          _buildInput(_mailRecipientController, 'Nguoi nhan', keyboardType: TextInputType.emailAddress),
+          _buildInput(
+            _mailRecipientController,
+            'Nguoi nhan',
+            keyboardType: TextInputType.emailAddress,
+            readOnly: true,
+          ),
           const SizedBox(height: 10),
           _buildInput(
             _mailMessageController,
             'Noi dung',
             minLines: 4,
             maxLines: 6,
+            readOnly: true,
           ),
           const SizedBox(height: 10),
           Container(
@@ -900,10 +1484,12 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     TextInputType keyboardType = TextInputType.text,
     int minLines = 1,
     int? maxLines = 1,
+    bool readOnly = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      readOnly: readOnly,
       minLines: minLines,
       maxLines: maxLines,
       decoration: InputDecoration(
