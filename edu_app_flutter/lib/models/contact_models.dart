@@ -62,6 +62,26 @@ class ScheduleEmailRequest {
   }
 }
 
+class SendEmailNowRequest {
+  const SendEmailNowRequest({
+    required this.subject,
+    required this.recipient,
+    required this.message,
+  });
+
+  final String subject;
+  final String recipient;
+  final String message;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'subject': subject,
+      'recipient': recipient,
+      'message': message,
+    };
+  }
+}
+
 class ScheduledEmailItem {
   const ScheduledEmailItem({
     required this.id,

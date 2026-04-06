@@ -36,6 +36,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   int _selectedTab = 0;
   bool _isSavingParent = false;
   bool _isScheduling = false;
+  bool _isSendingNow = false;
   bool _isLoadingHistory = false;
   bool _isLoadingClasses = false;
   bool _isLoadingStudents = false;
@@ -437,6 +438,108 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     } finally {
       if (mounted) {
         setState(() => _isScheduling = false);
+      }
+    }
+  }
+
+  Future<void> _sendEmailNow() async {
+    final teacherId = (AuthSession.instance.uid ?? '').trim();
+    final subjectTemplate = _mailSubjectController.text.trim();
+
+    if (teacherId.isEmpty || _selectedScheduleParentIds.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        message: 'Vui long chon lop va chon hoc sinh truoc khi gui ngay.',
+      );
+      return;
+    }
+
+    setState(() => _isSendingNow = true);
+    try {
+      final selectedParents = _parents
+          .where((parent) => _selectedScheduleParentIds.contains(parent.id))
+          .toList();
+
+      int successCount = 0;
+      final failedTargets = <String>[];
+
+      for (final parent in selectedParents) {
+        final recipient = parent.email.trim();
+        if (recipient.isEmpty) {
+          final name = parent.studentName.trim().isEmpty
+              ? parent.studentId
+              : parent.studentName.trim();
+          failedTargets.add('$name (thieu email)');
+          continue;
+        }
+
+        try {
+          final message = await _buildScheduleMessageForParent(parent);
+          final subject = _buildScheduleSubjectForParent(
+            parent: parent,
+            subjectTemplate: subjectTemplate,
+          );
+
+          await _contactService.sendEmailNow(
+            request: SendEmailNowRequest(
+              subject: subject,
+              recipient: recipient,
+              message: message,
+            ),
+          );
+          successCount += 1;
+        } catch (_) {
+          final name = parent.studentName.trim().isEmpty
+              ? parent.studentId
+              : parent.studentName.trim();
+          failedTargets.add(name);
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      if (successCount == 0) {
+        await AppNoticeModal.showError(
+          context,
+          message: 'Khong gui duoc email nao. Vui long kiem tra lai du lieu.',
+        );
+      } else if (failedTargets.isEmpty) {
+        await AppNoticeModal.showSuccess(
+          context,
+          title: 'Gui ngay thanh cong',
+          message: 'Da gui ngay $successCount email (moi email 1 request).',
+        );
+      } else {
+        await AppNoticeModal.showSuccess(
+          context,
+          title: 'Gui ngay mot phan',
+          message:
+              'Da gui ngay $successCount email. Khong thanh cong: ${failedTargets.join(', ')}',
+        );
+      }
+
+      _mailRecipientController.clear();
+      _mailMessageController.text = _buildScheduleMessagePreviewTemplate();
+      _selectedScheduleParentIds.clear();
+      _refreshSchedulePreview();
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(context, message: e.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(
+        context,
+        message: 'Khong the gui email ngay luc nay. Vui long thu lai.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingNow = false);
       }
     }
   }
@@ -1342,19 +1445,38 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isScheduling ? null : _scheduleEmail,
-              icon: _isScheduling
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.schedule_send_rounded),
-              label: const Text('Lap lich gui'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed:
+                      (_isScheduling || _isSendingNow) ? null : _scheduleEmail,
+                  icon: _isScheduling
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.schedule_send_rounded),
+                  label: const Text('Lap lich gui'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed:
+                      (_isScheduling || _isSendingNow) ? null : _sendEmailNow,
+                  icon: _isSendingNow
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send_rounded),
+                  label: const Text('Gui ngay'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

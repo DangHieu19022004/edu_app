@@ -13,6 +13,7 @@ class ApiEndpoints {
   static const String contactSaveParent = '/contact/save_parent/';
   static const String contactGetParents = '/contact/get_parents/';
   static const String contactScheduleEmail = '/contact/schedule_email/';
+  static const String contactSendEmailNow = '/contact/send_email_now/';
   static const String contactGetScheduledEmails = '/contact/get_scheduled_emails/';
   static const String ocrDetect = '/ocr/detect/';
   static const String ocrSaveFullReportCard = '/ocr/save_full_report_card/';

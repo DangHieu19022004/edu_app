@@ -52,6 +52,16 @@ class ContactService {
     });
   }
 
+  Future<ContactActionResponse> sendEmailNow({
+    required SendEmailNowRequest request,
+  }) async {
+    return AppLoadingModel.instance.track(() async {
+      final uri = Uri.parse(ApiConfig.endpoint(ApiEndpoints.contactSendEmailNow));
+      final bodyMap = await _postJson(uri: uri, body: request.toJson());
+      return ContactActionResponse.fromJson(bodyMap);
+    });
+  }
+
   Future<List<ParentItem>> getParents() async {
     return AppLoadingModel.instance.track(() async {
       final teacherId = (AuthSession.instance.uid ?? '').trim();
