@@ -18,10 +18,12 @@ class DetailHbaScreen extends StatefulWidget {
   const DetailHbaScreen({
     super.key,
     required this.studentId,
+    this.initialClassId,
     this.editable = false,
   });
 
   final String studentId;
+  final String? initialClassId;
   final bool editable;
 
   @override
@@ -147,6 +149,12 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     _genderController.text = student.gender;
     _dobController.text = student.dob;
     _phoneController.text = student.phone;
+    final passedClassId = (widget.initialClassId ?? '').trim();
+    if (passedClassId.isNotEmpty) {
+      _selectedClassId = passedClassId;
+      return;
+    }
+
     _selectedClassId = student.classId.isNotEmpty ? student.classId : null;
   }
 

@@ -503,6 +503,12 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       return;
     }
 
+    final selectedClassroom = (_classrooms.isNotEmpty &&
+            _selectedClassIndex >= 0 &&
+            _selectedClassIndex < _classrooms.length)
+        ? _classrooms[_selectedClassIndex]
+        : null;
+
     if (!mounted) {
       return;
     }
@@ -511,6 +517,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       MaterialPageRoute(
         builder: (_) => DetailHbaScreen(
           studentId: studentId,
+          initialClassId: selectedClassroom?.id,
           editable: editable,
         ),
       ),
