@@ -246,6 +246,86 @@ class OcrSaveFullReportCardResponse {
   }
 }
 
+class OcrUpdateReportCardRequest {
+  const OcrUpdateReportCardRequest({
+    required this.studentId,
+    required this.classId,
+    required this.subjects,
+  });
+
+  final String studentId;
+  final String classId;
+  final List<OcrUpdateSubjectItem> subjects;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'student': {
+        'id': studentId,
+      },
+      'report_card': {
+        'class_id': classId,
+      },
+      'subjects': subjects.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class OcrUpdateSubjectItem {
+  const OcrUpdateSubjectItem({
+    required this.name,
+    required this.year,
+    this.year1Sem1Score,
+    this.year1Sem2Score,
+    this.year1FinalScore,
+    this.year2Sem1Score,
+    this.year2Sem2Score,
+    this.year2FinalScore,
+    this.year3Sem1Score,
+    this.year3Sem2Score,
+    this.year3FinalScore,
+  });
+
+  final String name;
+  final int year;
+  final String? year1Sem1Score;
+  final String? year1Sem2Score;
+  final String? year1FinalScore;
+  final String? year2Sem1Score;
+  final String? year2Sem2Score;
+  final String? year2FinalScore;
+  final String? year3Sem1Score;
+  final String? year3Sem2Score;
+  final String? year3FinalScore;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'year': year,
+      'year1_sem1_score': year1Sem1Score,
+      'year1_sem2_score': year1Sem2Score,
+      'year1_final_score': year1FinalScore,
+      'year2_sem1_score': year2Sem1Score,
+      'year2_sem2_score': year2Sem2Score,
+      'year2_final_score': year2FinalScore,
+      'year3_sem1_score': year3Sem1Score,
+      'year3_sem2_score': year3Sem2Score,
+      'year3_final_score': year3FinalScore,
+    };
+  }
+}
+
+class OcrUpdateReportCardResponse {
+  const OcrUpdateReportCardResponse({required this.message});
+
+  final String message;
+
+  factory OcrUpdateReportCardResponse.fromJson(Map<String, dynamic> json) {
+    return OcrUpdateReportCardResponse(
+      message: (json['message'] ?? '').toString(),
+    );
+  }
+}
+
 class OcrReportCardStudent {
   const OcrReportCardStudent({
     required this.id,

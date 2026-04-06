@@ -110,7 +110,8 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
               initialValue: row.subject,
               readOnly: widget.readOnly,
               onChanged: (value) {
-                _updateRow(index, row.copyWith(subject: value));
+                final current = _rows[index];
+                _updateRow(index, current.copyWith(subject: value));
               },
             ),
             _EditableCell(
@@ -118,7 +119,8 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
               initialValue: row.hk1,
               readOnly: widget.readOnly,
               onChanged: (value) {
-                _updateRow(index, row.copyWith(hk1: value));
+                final current = _rows[index];
+                _updateRow(index, current.copyWith(hk1: value));
               },
             ),
             _EditableCell(
@@ -126,7 +128,8 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
               initialValue: row.hk2,
               readOnly: widget.readOnly,
               onChanged: (value) {
-                _updateRow(index, row.copyWith(hk2: value));
+                final current = _rows[index];
+                _updateRow(index, current.copyWith(hk2: value));
               },
             ),
             _EditableCell(
@@ -134,7 +137,8 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
               initialValue: row.caNam,
               readOnly: widget.readOnly,
               onChanged: (value) {
-                _updateRow(index, row.copyWith(caNam: value));
+                final current = _rows[index];
+                _updateRow(index, current.copyWith(caNam: value));
               },
             ),
           ],

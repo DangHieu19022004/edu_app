@@ -453,7 +453,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                         ),
                         IconButton(
                           tooltip: 'Sua hoc ba',
-                          onPressed: () => _openStudentDetail(student),
+                          onPressed: () => _openStudentDetail(
+                            student,
+                            editable: true,
+                          ),
                           icon: const Icon(
                             Icons.edit_rounded,
                             size: 20,
@@ -486,7 +489,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     );
   }
 
-  Future<void> _openStudentDetail(StudentInClassItem student) async {
+  Future<void> _openStudentDetail(
+    StudentInClassItem student, {
+    bool editable = false,
+  }) async {
     final studentId = student.id.trim();
     if (studentId.isEmpty) {
       await AppNoticeModal.showError(
@@ -503,7 +509,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => DetailHbaScreen(studentId: studentId),
+        builder: (_) => DetailHbaScreen(
+          studentId: studentId,
+          editable: editable,
+        ),
       ),
     );
   }
