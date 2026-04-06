@@ -40,7 +40,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     final hasLocalSession = AuthSession.instance.isAuthenticated;
     var canKeepLogin = false;
-    debugPrint('[AuthStartup] hasLocalSession=$hasLocalSession uid=${AuthSession.instance.uid}');
+    debugPrint(
+      '[AuthStartup] hasLocalSession=$hasLocalSession uid=${AuthSession.instance.uid}',
+    );
 
     if (hasLocalSession) {
       canKeepLogin = await _authService.verifyToken();
@@ -53,7 +55,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => canKeepLogin ? const DashboardScreen() : const LoginScreen(),
+        builder: (_) =>
+            canKeepLogin ? const DashboardScreen() : const LoginScreen(),
       ),
     );
   }
@@ -335,7 +338,11 @@ class _LoadingSection extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.verified_user_rounded, size: 16, color: Color(0xFF60A5FA)),
+              Icon(
+                Icons.verified_user_rounded,
+                size: 16,
+                color: Color(0xFF60A5FA),
+              ),
               SizedBox(width: 8),
               Text(
                 'Chuyển đổi số công nghệ',
@@ -382,10 +389,7 @@ class _BackgroundGlow extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       ),
     );
   }

@@ -1,6 +1,6 @@
 {
-    "name": "edu_app_flutter",
-    "short_name": "edu_app_flutter",
+    "name": "EduTeacher",
+    "short_name": "EduTeacher",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
