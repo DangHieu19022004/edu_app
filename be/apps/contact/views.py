@@ -1,5 +1,6 @@
 from django.conf import settings
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from apps.contact.models import Parent, EmailSchedule
 from apps.classroom.models import Class
@@ -163,6 +164,7 @@ def schedule_email(request):
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def save_parent(request):
     try:
         teacher_id = request.data.get('teacher_id')

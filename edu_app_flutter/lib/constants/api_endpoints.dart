@@ -10,6 +10,10 @@ class ApiEndpoints {
   static const String classroomGetClassrooms = '/classroom/get_classrooms/';
   static const String classroomGetStudentsByClass = '/classroom/get_students_by_class/';
   static const String classroomDeleteClassroom = '/classroom/delete_classroom/';
+  static const String contactSaveParent = '/contact/save_parent/';
+  static const String contactGetParents = '/contact/get_parents/';
+  static const String contactScheduleEmail = '/contact/schedule_email/';
+  static const String contactGetScheduledEmails = '/contact/get_scheduled_emails/';
   static const String ocrDetect = '/ocr/detect/';
   static const String ocrSaveFullReportCard = '/ocr/save_full_report_card/';
   static const String ocrGetFullReportCard = '/ocr/get_full_report_card/';
