@@ -193,7 +193,7 @@ def delete_full_report_card(request):
         ReportCardSubject.objects.filter(report_card_id=report_card_id).delete()
 
         # Xoá thông tin sinh viên (nếu không còn học bạ nào khác)
-        if not ReportCard.objects.filter(student_id=student_id).exists():
+        if ReportCard.objects.filter(student_id=student_id).first() is None:
             StudentInfo.objects.filter(student_id=student_id).delete()
 
 

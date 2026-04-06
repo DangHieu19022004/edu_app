@@ -42,6 +42,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
   int _selectedGrade = 12;
   bool _isLoading = true;
   bool _isUpdating = false;
+  bool _isDeleting = false;
   bool _isLoadingClassrooms = false;
   String? _errorMessage;
   String? _selectedClassId;
@@ -538,6 +539,95 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     }
   }
 
+  Future<bool?> _showDeleteReportCardConfirm() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Xac nhan xoa hoc ba'),
+          content: const Text('Ban co chac chan muon xoa hoc ba nay khong?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Huy'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Xoa'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmAndDeleteCurrentReportCard() async {
+    if (_isDeleting) {
+      return;
+    }
+
+    final shouldDelete = await _showDeleteReportCardConfirm();
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+
+    final reportCardId = _data?.reportCard?.id.trim() ?? '';
+    if (reportCardId.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Khong co hoc ba de xoa',
+        message: 'Khong tim thay report_card_id hop le.',
+      );
+      return;
+    }
+
+    setState(() => _isDeleting = true);
+
+    try {
+      final message = await _ocrService.deleteFullReportCard(
+        reportCardId: reportCardId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Xoa hoc ba thanh cong',
+        message: message,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const ListHbaScreen()),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(context, message: e.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(
+        context,
+        message: 'Khong the xoa hoc ba. Vui long thu lai.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -555,6 +645,33 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
                       MaterialPageRoute(builder: (_) => const ListHbaScreen()),
                     );
                   },
+                  trailing: Material(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _isDeleting ? null : _confirmAndDeleteCurrentReportCard,
+                      child: _isDeleting
+                          ? const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.white,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.delete_outline_rounded,
+                              color: AppColors.white,
+                            ),
+                    ),
+                  ),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
