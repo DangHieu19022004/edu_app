@@ -1,15 +1,7 @@
-enum OcrImageRole {
-  studentInfo,
-  grade10,
-  grade11,
-  grade12,
-}
+enum OcrImageRole { studentInfo, grade10, grade11, grade12 }
 
 class OcrDetectImageInput {
-  const OcrDetectImageInput({
-    required this.path,
-    required this.role,
-  });
+  const OcrDetectImageInput({required this.path, required this.role});
 
   final String path;
   final OcrImageRole role;
@@ -71,12 +63,7 @@ class OcrScoreRow {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'ten_mon': subject,
-      'hky1': hk1,
-      'hky2': hk2,
-      'ca_nam': caNam,
-    };
+    return {'ten_mon': subject, 'hky1': hk1, 'hky2': hk2, 'ca_nam': caNam};
   }
 
   OcrScoreRow copyWith({
@@ -94,7 +81,10 @@ class OcrScoreRow {
   }
 
   bool get hasContent {
-    return subject.isNotEmpty || hk1.isNotEmpty || hk2.isNotEmpty || caNam.isNotEmpty;
+    return subject.isNotEmpty ||
+        hk1.isNotEmpty ||
+        hk2.isNotEmpty ||
+        caNam.isNotEmpty;
   }
 }
 
@@ -141,9 +131,7 @@ class OcrDetectResult {
     );
   }
 
-  OcrDetectResult copyWith({
-    OcrImageRole? role,
-  }) {
+  OcrDetectResult copyWith({OcrImageRole? role}) {
     return OcrDetectResult(
       role: role ?? this.role,
       imageUrl: imageUrl,
@@ -225,10 +213,7 @@ class OcrSaveFullReportCardRequest {
         'ethnicity': '',
         'birthplace': '',
       },
-      'report_card': {
-        'class_id': classId,
-        'school_year': schoolYear,
-      },
+      'report_card': {'class_id': classId, 'school_year': schoolYear},
       'subjects': subjects.map((item) => item.toJson()).toList(),
     };
   }
@@ -259,12 +244,8 @@ class OcrUpdateReportCardRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'student': {
-        'id': studentId,
-      },
-      'report_card': {
-        'class_id': classId,
-      },
+      'student': {'id': studentId},
+      'report_card': {'class_id': classId},
       'subjects': subjects.map((item) => item.toJson()).toList(),
     };
   }
@@ -429,9 +410,9 @@ class OcrReportCardClassGroup {
     final dynamic rawSubjects = json['subjects'];
     final subjects = rawSubjects is List
         ? rawSubjects
-            .whereType<Map<String, dynamic>>()
-            .map(OcrReportCardClassSubject.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(OcrReportCardClassSubject.fromJson)
+              .toList()
         : const <OcrReportCardClassSubject>[];
 
     return OcrReportCardClassGroup(
@@ -470,12 +451,158 @@ class OcrFullReportCardResponse {
           : null,
       classList: rawClassList is List
           ? rawClassList
-              .whereType<Map<String, dynamic>>()
-              .map(OcrReportCardClassGroup.fromJson)
-              .toList()
+                .whereType<Map<String, dynamic>>()
+                .map(OcrReportCardClassGroup.fromJson)
+                .toList()
           : const <OcrReportCardClassGroup>[],
       className: (json['class_name'] ?? '').toString(),
       schoolName: (json['school_name'] ?? '').toString(),
     );
   }
+}
+
+class OcrAllStudentDataResponse {
+  const OcrAllStudentDataResponse({required this.students});
+
+  final List<OcrAllStudentDataItem> students;
+
+  factory OcrAllStudentDataResponse.fromJson(Map<String, dynamic> json) {
+    final dynamic rawStudents = json['students'];
+    final students = rawStudents is List
+        ? rawStudents
+              .whereType<Map<String, dynamic>>()
+              .map(OcrAllStudentDataItem.fromJson)
+              .toList()
+        : const <OcrAllStudentDataItem>[];
+
+    return OcrAllStudentDataResponse(students: students);
+  }
+}
+
+class OcrAllStudentDataItem {
+  const OcrAllStudentDataItem({
+    required this.student,
+    required this.reportCard,
+    required this.subjects,
+  });
+
+  final OcrAllStudentInfo student;
+  final OcrAllStudentReportCard reportCard;
+  final List<OcrAllStudentSubject> subjects;
+
+  factory OcrAllStudentDataItem.fromJson(Map<String, dynamic> json) {
+    final dynamic rawStudent = json['student'];
+    final dynamic rawReportCard = json['report_card'];
+    final dynamic rawSubjects = json['subjects'];
+
+    return OcrAllStudentDataItem(
+      student: rawStudent is Map<String, dynamic>
+          ? OcrAllStudentInfo.fromJson(rawStudent)
+          : OcrAllStudentInfo.fromJson(const <String, dynamic>{}),
+      reportCard: rawReportCard is Map<String, dynamic>
+          ? OcrAllStudentReportCard.fromJson(rawReportCard)
+          : OcrAllStudentReportCard.fromJson(const <String, dynamic>{}),
+      subjects: rawSubjects is List
+          ? rawSubjects
+                .whereType<Map<String, dynamic>>()
+                .map(OcrAllStudentSubject.fromJson)
+                .toList()
+          : const <OcrAllStudentSubject>[],
+    );
+  }
+}
+
+class OcrAllStudentInfo {
+  const OcrAllStudentInfo({
+    required this.id,
+    required this.name,
+    required this.gender,
+    required this.dob,
+    required this.school,
+    required this.className,
+    required this.classYear,
+  });
+
+  final String id;
+  final String name;
+  final String gender;
+  final String dob;
+  final String school;
+  final String className;
+  final String classYear;
+
+  factory OcrAllStudentInfo.fromJson(Map<String, dynamic> json) {
+    return OcrAllStudentInfo(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      gender: (json['gender'] ?? '').toString(),
+      dob: (json['dob'] ?? '').toString(),
+      school: (json['school'] ?? '').toString(),
+      className: (json['class'] ?? '').toString(),
+      classYear: (json['class_year'] ?? '').toString(),
+    );
+  }
+}
+
+class OcrAllStudentReportCard {
+  const OcrAllStudentReportCard({
+    required this.schoolYear,
+    required this.teacherComment,
+    required this.conduct,
+    required this.gpa,
+  });
+
+  final String schoolYear;
+  final String teacherComment;
+  final String conduct;
+  final Map<String, double> gpa;
+
+  factory OcrAllStudentReportCard.fromJson(Map<String, dynamic> json) {
+    final dynamic rawGpa = json['gpa'];
+    final Map<String, double> parsedGpa = <String, double>{};
+
+    if (rawGpa is Map<String, dynamic>) {
+      for (final entry in rawGpa.entries) {
+        final parsed = double.tryParse(entry.value.toString());
+        if (parsed != null) {
+          parsedGpa[entry.key.toString()] = parsed;
+        }
+      }
+    }
+
+    return OcrAllStudentReportCard(
+      schoolYear: (json['school_year'] ?? '').toString(),
+      teacherComment: (json['teacher_comment'] ?? '').toString(),
+      conduct: (json['conduct'] ?? '').toString(),
+      gpa: parsedGpa,
+    );
+  }
+}
+
+class OcrAllStudentSubject {
+  const OcrAllStudentSubject({
+    required this.name,
+    required this.year,
+    required this.hk1,
+    required this.hk2,
+    required this.cn,
+  });
+
+  final String name;
+  final String year;
+  final String hk1;
+  final String hk2;
+  final String cn;
+
+  factory OcrAllStudentSubject.fromJson(Map<String, dynamic> json) {
+    return OcrAllStudentSubject(
+      name: (json['name'] ?? '').toString(),
+      year: (json['year'] ?? '').toString(),
+      hk1: (json['hk1'] ?? '').toString(),
+      hk2: (json['hk2'] ?? '').toString(),
+      cn: (json['cn'] ?? '').toString(),
+    );
+  }
+
+  double? get finalScoreAsDouble => double.tryParse(cn);
 }

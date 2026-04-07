@@ -19,6 +19,7 @@ class ApiEndpoints {
   static const String ocrDetect = '/ocr/detect/';
   static const String ocrSaveFullReportCard = '/ocr/save_full_report_card/';
   static const String ocrGetFullReportCard = '/ocr/get_full_report_card/';
+  static const String ocrGetAllStudentData = '/ocr/get_all_student_data/';
   static const String ocrUpdateReportCard = '/ocr/update_report_card/';
   static const String ocrDeleteFullReportCard = '/ocr/delete_full_report_card/';
 }
