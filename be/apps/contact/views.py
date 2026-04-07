@@ -98,6 +98,7 @@ def get_scheduled_emails(request):
     return Response(data)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def send_email_now(request):
     try:
         subject = request.data.get('subject')

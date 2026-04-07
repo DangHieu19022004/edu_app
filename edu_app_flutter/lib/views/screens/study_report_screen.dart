@@ -355,10 +355,10 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       for (final parent in selectedParents) {
         final recipient = parent.email.trim();
+        final name = parent.studentName.trim().isEmpty
+            ? parent.studentId
+            : parent.studentName.trim();
         if (recipient.isEmpty) {
-          final name = parent.studentName.trim().isEmpty
-              ? parent.studentId
-              : parent.studentName.trim();
           failedTargets.add('$name (thieu email)');
           continue;
         }
@@ -379,11 +379,10 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ),
           );
           successCount += 1;
+        } on ApiException catch (e) {
+          failedTargets.add('$name (${e.message})');
         } catch (_) {
-          final name = parent.studentName.trim().isEmpty
-              ? parent.studentId
-              : parent.studentName.trim();
-          failedTargets.add(name);
+          failedTargets.add('$name (loi khong xac dinh)');
         }
       }
 
@@ -406,7 +405,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       if (successCount == 0) {
         await AppNoticeModal.showError(
           context,
-          message: 'Khong lap lich duoc email nao. Vui long kiem tra lai du lieu.',
+          message: failedTargets.isEmpty
+              ? 'Khong lap lich duoc email nao. Vui long kiem tra lai du lieu.'
+              : 'Khong lap lich duoc email nao. Chi tiet: ${failedTargets.join(', ')}',
         );
       } else if (failedTargets.isEmpty) {
         await AppNoticeModal.showSuccess(
@@ -465,10 +466,10 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       for (final parent in selectedParents) {
         final recipient = parent.email.trim();
+        final name = parent.studentName.trim().isEmpty
+            ? parent.studentId
+            : parent.studentName.trim();
         if (recipient.isEmpty) {
-          final name = parent.studentName.trim().isEmpty
-              ? parent.studentId
-              : parent.studentName.trim();
           failedTargets.add('$name (thieu email)');
           continue;
         }
@@ -488,11 +489,10 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ),
           );
           successCount += 1;
+        } on ApiException catch (e) {
+          failedTargets.add('$name (${e.message})');
         } catch (_) {
-          final name = parent.studentName.trim().isEmpty
-              ? parent.studentId
-              : parent.studentName.trim();
-          failedTargets.add(name);
+          failedTargets.add('$name (loi khong xac dinh)');
         }
       }
 
@@ -503,7 +503,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       if (successCount == 0) {
         await AppNoticeModal.showError(
           context,
-          message: 'Khong gui duoc email nao. Vui long kiem tra lai du lieu.',
+          message: failedTargets.isEmpty
+              ? 'Khong gui duoc email nao. Vui long kiem tra lai du lieu.'
+              : 'Khong gui duoc email nao. Chi tiet: ${failedTargets.join(', ')}',
         );
       } else if (failedTargets.isEmpty) {
         await AppNoticeModal.showSuccess(

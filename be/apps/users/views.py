@@ -300,7 +300,7 @@ def send_otp(request):
         send_mail(
             subject="Mã xác thực OTP",
             message=f"Mã OTP của bạn là: {otp_code}",
-            from_email="danghieu19022004@gmail.com",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
             fail_silently=False,
         )
