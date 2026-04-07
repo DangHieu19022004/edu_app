@@ -27,6 +27,7 @@ def get_template(request):
     return "hello"
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def delete_email_schedule(request):
     try:
         email_id = request.data.get('id')
@@ -43,6 +44,7 @@ def delete_email_schedule(request):
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def update_email_schedule(request):
     try:
         email_id = request.data.get('id')

@@ -15,6 +15,7 @@ class ApiEndpoints {
   static const String contactScheduleEmail = '/contact/schedule_email/';
   static const String contactSendEmailNow = '/contact/send_email_now/';
   static const String contactGetScheduledEmails = '/contact/get_scheduled_emails/';
+  static const String contactDeleteEmailSchedule = '/contact/delete_email_schedule/';
   static const String ocrDetect = '/ocr/detect/';
   static const String ocrSaveFullReportCard = '/ocr/save_full_report_card/';
   static const String ocrGetFullReportCard = '/ocr/get_full_report_card/';

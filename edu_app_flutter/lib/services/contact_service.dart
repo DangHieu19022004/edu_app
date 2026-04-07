@@ -198,6 +198,28 @@ class ContactService {
     });
   }
 
+  Future<ContactActionResponse> deleteEmailSchedule({
+    required String id,
+  }) async {
+    return AppLoadingModel.instance.track(() async {
+      final emailId = id.trim();
+      if (emailId.isEmpty) {
+        throw const ApiException(message: 'Email id khong hop le');
+      }
+
+      final uri = Uri.parse(
+        ApiConfig.endpoint(ApiEndpoints.contactDeleteEmailSchedule),
+      );
+      final bodyMap = await _postJson(
+        uri: uri,
+        body: {
+          'id': emailId,
+        },
+      );
+      return ContactActionResponse.fromJson(bodyMap);
+    });
+  }
+
   Future<Map<String, dynamic>> _postJson({
     required Uri uri,
     required Map<String, dynamic> body,

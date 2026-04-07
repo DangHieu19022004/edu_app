@@ -41,6 +41,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   bool _isLoadingClasses = false;
   bool _isLoadingStudents = false;
   bool _isLoadingParents = false;
+  final Set<String> _deletingHistoryIds = <String>{};
 
   DateTime? _scheduledAt;
   List<ScheduledEmailItem> _history = const <ScheduledEmailItem>[];
@@ -199,6 +200,81 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     } finally {
       if (mounted) {
         setState(() => _isLoadingHistory = false);
+      }
+    }
+  }
+
+  Future<void> _deleteScheduledEmail(ScheduledEmailItem item) async {
+    final emailId = item.id.trim();
+    if (emailId.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        message: 'Khong tim thay id lich email de xoa.',
+      );
+      return;
+    }
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Xoa lich email'),
+          content: const Text('Ban co chac muon xoa lich gui email nay khong?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Huy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Xoa'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _deletingHistoryIds.add(emailId);
+    });
+
+    try {
+      final response = await _contactService.deleteEmailSchedule(id: emailId);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _history = _history.where((historyItem) => historyItem.id != emailId).toList();
+      });
+
+      await AppNoticeModal.showSuccess(
+        context,
+        title: 'Xoa thanh cong',
+        message: response.message.isEmpty ? 'Da xoa lich email.' : response.message,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(context, message: e.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      await AppNoticeModal.showError(
+        context,
+        message: 'Khong the xoa lich email. Vui long thu lai.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingHistoryIds.remove(emailId);
+        });
       }
     }
   }
@@ -1518,6 +1594,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
           else
             Column(
               children: _history.map((item) {
+                final isDeleting = _deletingHistoryIds.contains(item.id);
                 return Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 10),
@@ -1530,13 +1607,38 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        item.subject.isEmpty ? 'Khong co tieu de' : item.subject,
-                        style: const TextStyle(
-                          fontSize: AppFontSizes.dashboardBody,
-                          color: AppColors.title,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.subject.isEmpty ? 'Khong co tieu de' : item.subject,
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.dashboardBody,
+                                color: AppColors.title,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: isDeleting
+                                ? null
+                                : () {
+                                    _deleteScheduledEmail(item);
+                                  },
+                            tooltip: 'Xoa lich email',
+                            icon: isDeleting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Color(0xFFCC2F2F),
+                                  ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
