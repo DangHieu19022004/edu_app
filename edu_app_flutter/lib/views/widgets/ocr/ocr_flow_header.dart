@@ -9,12 +9,14 @@ class OcrFlowHeader extends StatelessWidget {
     required this.onBack,
     this.subtitle,
     this.trailing,
+    this.trailingWidth = 40,
   });
 
   final String title;
   final VoidCallback onBack;
   final String? subtitle;
   final Widget? trailing;
+  final double trailingWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -39,20 +41,7 @@ class OcrFlowHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: Colors.white.withValues(alpha: 0.2),
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onBack,
-              child: const SizedBox(
-                width: 40,
-                height: 40,
-                child: Icon(Icons.arrow_back, color: AppColors.white),
-              ),
-            ),
-          ),
+          _buildBackButton(),
           Expanded(
             child: Column(
               children: [
@@ -82,14 +71,27 @@ class OcrFlowHeader extends StatelessWidget {
             ),
           ),
           if (trailing != null)
-            SizedBox(
-              width: 40,
-              height: 40,
-              child: trailing,
-            )
+            SizedBox(width: trailingWidth, height: 40, child: trailing)
           else
-            const SizedBox(width: 40),
+            SizedBox(width: trailingWidth),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.2),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onBack,
+        child: const SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(Icons.arrow_back, color: AppColors.white),
+        ),
       ),
     );
   }

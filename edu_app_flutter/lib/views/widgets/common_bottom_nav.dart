@@ -7,19 +7,10 @@ import 'package:edu_app_flutter/views/screens/profile_screen.dart';
 import 'package:edu_app_flutter/views/screens/statistics_screen.dart';
 import 'package:flutter/material.dart';
 
-enum BottomNavTab {
-  home,
-  statistics,
-  classes,
-  profile,
-}
+enum BottomNavTab { home, statistics, classes, profile }
 
 class CommonBottomNav extends StatelessWidget {
-  const CommonBottomNav({
-    super.key,
-    required this.currentTab,
-    this.onScanTap,
-  });
+  const CommonBottomNav({super.key, required this.currentTab, this.onScanTap});
 
   final BottomNavTab currentTab;
   final VoidCallback? onScanTap;

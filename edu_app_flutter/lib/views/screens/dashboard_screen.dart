@@ -8,6 +8,7 @@ import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_activity_item.
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_feature_card.dart';
 // import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_quick_action_chip.dart';
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_section_header.dart';
+import 'package:edu_app_flutter/views/screens/chatbot_screen.dart';
 import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
 import 'package:edu_app_flutter/views/screens/study_report_screen.dart';
 import 'package:flutter/material.dart';
@@ -92,15 +93,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // }
 
   void _openPreOcr() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const PreOcrScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const PreOcrScreen()));
   }
 
   void _openStudyReport() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const StudyReportScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const StudyReportScreen()));
+  }
+
+  void _openChatbot() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ChatbotScreen()));
   }
 
   Widget _buildFeaturesSection() {
@@ -129,11 +136,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 accent: AppColors.primary,
                 onTap: _openPreOcr,
               ),
-              const DashboardFeatureCard(
+              DashboardFeatureCard(
                 icon: Icons.smart_toy_rounded,
                 title: 'Chatbot hỗ trợ',
                 subtitle: 'Trợ lý ảo AI',
                 accent: Color(0xFF06B6D4),
+                onTap: _openChatbot,
               ),
               const DashboardFeatureCard(
                 icon: Icons.bar_chart_rounded,
@@ -235,10 +243,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _DashboardHeroHeader extends StatelessWidget {
-  const _DashboardHeroHeader({
-    required this.displayName,
-    required this.avatar,
-  });
+  const _DashboardHeroHeader({required this.displayName, required this.avatar});
 
   final String displayName;
   final String avatar;
@@ -341,11 +346,16 @@ class _DashboardHeroHeader extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x331337EC),
