@@ -1,6 +1,10 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
+import 'package:edu_app_flutter/models/ocr_models.dart';
+import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
+import 'package:edu_app_flutter/services/chatbot_service.dart';
+import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/widgets/chatbot/ai_chat_bubble.dart';
 import 'package:edu_app_flutter/views/widgets/chatbot/user_chat_bubble.dart';
@@ -25,23 +29,13 @@ enum _MessageSender { ai, user }
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<_ChatMessage> _messages = <_ChatMessage>[
-    const _ChatMessage(
-      sender: _MessageSender.ai,
-      text:
-          'Chao ban, toi la tro ly hoc tap EduTeacher. Toi co the giup gi cho ban hom nay?',
-    ),
-    const _ChatMessage(
-      sender: _MessageSender.user,
-      text: 'Hay giup minh phan tich ket qua hoc tap ky vua roi.',
-    ),
-    const _ChatMessage(
-      sender: _MessageSender.ai,
-      text:
-          'Dua tren diem so cua ban, mon Toan va Ly dang co su tien bo ro ret. Tuy nhien, mon Tieng Anh can cai thien them ve phan tu vung.',
-    ),
-  ];
+  final ChatbotService _chatbotService = ChatbotService();
+  final OcrService _ocrService = OcrService();
+  final List<_ChatMessage> _messages = <_ChatMessage>[];
   final ScrollController _scrollController = ScrollController();
+  bool _isSending = false;
+  List<OcrAllStudentDataItem>? _cachedStudents;
+  String? _conversationId;
 
   @override
   void dispose() {
@@ -62,22 +56,28 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           children: [
             _buildHeader(),
             Expanded(
-              child: ListView(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                children: [
-                  ..._messages.map(
-                    (message) => message.sender == _MessageSender.ai
-                        ? AiChatBubble(message: message.text)
-                        : UserChatBubble(
-                            message: message.text,
-                            avatar: userAvatar,
+              child: _messages.isEmpty && !_isSending
+                  ? _buildEmptyStateDecor()
+                  : ListView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                      children: [
+                        ..._messages.map(
+                          (message) => message.sender == _MessageSender.ai
+                              ? AiChatBubble(message: message.text)
+                              : UserChatBubble(
+                                  message: message.text,
+                                  avatar: userAvatar,
+                                ),
+                        ),
+                        if (_isSending)
+                          const AiChatBubble(
+                            message: 'Dang phan tich du lieu hoc tap...',
                           ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSuggestionChips(),
-                ],
-              ),
+                        const SizedBox(height: 12),
+                        _buildSuggestionChips(),
+                      ],
+                    ),
             ),
             AnimatedPadding(
               duration: const Duration(milliseconds: 180),
@@ -104,6 +104,69 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyStateDecor() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 360),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.heroPrimary, AppColors.heroSecondary],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x331337EC),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  AppIcons.chatbot,
+                  color: AppColors.white,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Chao ban, toi co the giup gi duoc cho ban?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  height: 1.35,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.title,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Dat cau hoi ve ket qua hoc tap de AI phan tich va goi y cho ban.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: AppFontSizes.dashboardBody,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.subtitle,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _buildSuggestionChips(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -172,7 +235,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 ),
                 style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _handleSend(),
+                onSubmitted: (_) {
+                  if (!_isSending) {
+                    _handleSend();
+                  }
+                },
               ),
             ),
           ),
@@ -182,7 +249,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             borderRadius: BorderRadius.circular(26),
             child: InkWell(
               borderRadius: BorderRadius.circular(26),
-              onTap: _handleSend,
+              onTap: _isSending ? null : _handleSend,
               child: Container(
                 width: 52,
                 height: 52,
@@ -205,24 +272,84 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
-  void _handleSend() {
+  Future<void> _handleSend() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) {
+    if (text.isEmpty || _isSending) {
       return;
     }
 
     setState(() {
       _messages.add(_ChatMessage(sender: _MessageSender.user, text: text));
-      _messages.add(
-        const _ChatMessage(
-          sender: _MessageSender.ai,
-          text:
-              'Minh da nhan cau hoi. Ban co the gui them thong tin diem tung mon de minh phan tich chi tiet hon.',
-        ),
-      );
       _messageController.clear();
+      _isSending = true;
     });
 
+    _scrollToBottom();
+
+    try {
+      final students = await _getStudentsForChatbot();
+      final response = await _chatbotService.askChatbot(
+        question: text,
+        students: students,
+        conversationId: _conversationId,
+      );
+
+      final answer = response.answer.trim();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        if (answer.isNotEmpty) {
+          _messages.add(_ChatMessage(sender: _MessageSender.ai, text: answer));
+        }
+        final conversationId = response.conversationId.trim();
+        if (conversationId.isNotEmpty) {
+          _conversationId = conversationId;
+        }
+      });
+    } catch (e) {
+      final fallback = e is ApiException
+          ? e.message
+          : 'Chatbot dang ban. Vui long thu lai sau it phut.';
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _messages.add(_ChatMessage(sender: _MessageSender.ai, text: fallback));
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSending = false;
+      });
+
+      _scrollToBottom();
+    }
+  }
+
+  Future<List<OcrAllStudentDataItem>> _getStudentsForChatbot() async {
+    if (_cachedStudents != null) {
+      return _cachedStudents!;
+    }
+
+    try {
+      final response = await _ocrService.getAllStudentData();
+      _cachedStudents = response.students;
+    } catch (_) {
+      _cachedStudents = const <OcrAllStudentDataItem>[];
+    }
+
+    return _cachedStudents!;
+  }
+
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) {
         return;
