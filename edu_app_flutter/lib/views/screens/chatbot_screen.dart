@@ -2,7 +2,8 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
-import 'package:edu_app_flutter/views/widgets/app_user_avatar.dart';
+import 'package:edu_app_flutter/views/widgets/chatbot/ai_chat_bubble.dart';
+import 'package:edu_app_flutter/views/widgets/chatbot/user_chat_bubble.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
 
@@ -52,6 +53,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets;
+    final userAvatar = (AuthSession.instance.user?.avatar ?? '').trim();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -64,7 +66,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 children: [
-                  ..._messages.map(_buildMessageBubble),
+                  ..._messages.map(
+                    (message) => message.sender == _MessageSender.ai
+                        ? AiChatBubble(message: message.text)
+                        : UserChatBubble(
+                            message: message.text,
+                            avatar: userAvatar,
+                          ),
+                  ),
                   const SizedBox(height: 12),
                   _buildSuggestionChips(),
                 ],
@@ -83,137 +92,18 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildHeader() {
-    return Column(
-      children: [
-        OcrFlowHeader(
-          title: 'Chatbot',
-          subtitle: 'Tro ly hoc tap AI',
-          onBack: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-              return;
-            }
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-          trailingWidth: 92,
-          trailing: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _headerIconButton(AppIcons.search),
-              const SizedBox(width: 6),
-              _headerIconButton(Icons.more_vert_rounded),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _headerIconButton(IconData icon) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: AppColors.white, size: 20),
-    );
-  }
-
-  Widget _buildMessageBubble(_ChatMessage message) {
-    final isUser = message.sender == _MessageSender.user;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!isUser) ...[_buildAiAvatar(), const SizedBox(width: 8)],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isUser
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isUser ? 'Ban' : 'Tu van AI',
-                  style: const TextStyle(
-                    fontSize: AppFontSizes.dashboardBody,
-                    color: AppColors.subtitle,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isUser ? AppColors.primary : AppColors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(20),
-                      topRight: const Radius.circular(20),
-                      bottomLeft: Radius.circular(isUser ? 20 : 6),
-                      bottomRight: Radius.circular(isUser ? 6 : 20),
-                    ),
-                    border: isUser
-                        ? null
-                        : Border.all(color: AppColors.cardBorder),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x120F1D44),
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    message.text,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.35,
-                      fontWeight: FontWeight.w500,
-                      color: isUser ? AppColors.white : const Color(0xFF111827),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isUser) ...[const SizedBox(width: 8), _buildUserAvatar()],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAiAvatar() {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(AppIcons.chatbot, color: AppColors.primary, size: 18),
-    );
-  }
-
-  Widget _buildUserAvatar() {
-    final user = AuthSession.instance.user;
-
-    return AppUserAvatar(
-      avatar: user?.avatar ?? '',
-      size: 34,
-      borderRadius: BorderRadius.circular(17),
-      iconSize: 18,
+    return OcrFlowHeader(
+      title: 'Chatbot',
+      subtitle: 'Tro ly hoc tap AI',
+      onBack: () {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          return;
+        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      },
     );
   }
 
@@ -273,30 +163,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 color: const Color(0xFFF1F4FB),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.attach_file_rounded,
-                    color: AppColors.subtitle,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Nhap tin nhan...',
-                        hintStyle: TextStyle(color: AppColors.inputHint),
-                        border: InputBorder.none,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF1F2937),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _handleSend(),
-                    ),
-                  ),
-                ],
+              child: TextField(
+                controller: _messageController,
+                decoration: const InputDecoration(
+                  hintText: 'Nhap tin nhan...',
+                  hintStyle: TextStyle(color: AppColors.inputHint),
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _handleSend(),
               ),
             ),
           ),
