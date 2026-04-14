@@ -7,6 +7,7 @@ import 'package:edu_app_flutter/services/chatbot_service.dart';
 import 'package:edu_app_flutter/services/ocr_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/widgets/chatbot/ai_chat_bubble.dart';
+import 'package:edu_app_flutter/views/widgets/chatbot/ai_typing_indicator.dart';
 import 'package:edu_app_flutter/views/widgets/chatbot/user_chat_bubble.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
@@ -46,46 +47,39 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.of(context).viewInsets;
     final userAvatar = (AuthSession.instance.user?.avatar ?? '').trim();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _messages.isEmpty && !_isSending
-                  ? _buildEmptyStateDecor()
-                  : ListView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                      children: [
-                        ..._messages.map(
-                          (message) => message.sender == _MessageSender.ai
-                              ? AiChatBubble(message: message.text)
-                              : UserChatBubble(
-                                  message: message.text,
-                                  avatar: userAvatar,
-                                ),
-                        ),
-                        if (_isSending)
-                          const AiChatBubble(
-                            message: 'Dang phan tich du lieu hoc tap...',
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _dismissKeyboard,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: _messages.isEmpty && !_isSending
+                    ? _buildEmptyStateDecor()
+                    : ListView(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        children: [
+                          ..._messages.map(
+                            (message) => message.sender == _MessageSender.ai
+                                ? AiChatBubble(message: message.text)
+                                : UserChatBubble(
+                                    message: message.text,
+                                    avatar: userAvatar,
+                                  ),
                           ),
-                        const SizedBox(height: 12),
-                        _buildSuggestionChips(),
-                      ],
-                    ),
-            ),
-            AnimatedPadding(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(bottom: viewInsets.bottom),
-              child: _buildInputBar(),
-            ),
-          ],
+                          if (_isSending) const AiTypingIndicator(),
+                        ],
+                      ),
+              ),
+              _buildInputBar(),
+            ],
+          ),
         ),
       ),
     );
@@ -340,7 +334,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
 
     try {
-      final response = await _ocrService.getAllStudentData();
+      final response = await _ocrService.getAllStudentDataSilently();
       _cachedStudents = response.students;
     } catch (_) {
       _cachedStudents = const <OcrAllStudentDataItem>[];
@@ -360,5 +354,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  void _dismissKeyboard() {
+    final currentFocus = FocusScope.of(context);
+    if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
+      currentFocus.unfocus();
+    }
   }
 }

@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
-import 'package:edu_app_flutter/models/app_loading_model.dart';
 import 'package:edu_app_flutter/models/chatbot_models.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -22,62 +21,60 @@ class ChatbotService {
     List<OcrAllStudentDataItem> students = const <OcrAllStudentDataItem>[],
     String? conversationId,
   }) async {
-    return AppLoadingModel.instance.track(() async {
-      final uid = (AuthSession.instance.uid ?? '').trim();
-      if (uid.isEmpty) {
-        throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
-        );
-      }
-
-      final normalizedQuestion = question.trim();
-      if (normalizedQuestion.isEmpty) {
-        throw const ApiException(message: 'Vui long nhap cau hoi cho chatbot.');
-      }
-
-      final request = ChatbotAskRequest(
-        question: normalizedQuestion,
-        students: students.map(ChatbotStudentPayload.fromOcrItem).toList(),
-        conversationId: conversationId,
+    final uid = (AuthSession.instance.uid ?? '').trim();
+    if (uid.isEmpty) {
+      throw const ApiException(
+        message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
       );
+    }
 
-      final uri = Uri.parse(ApiConfig.endpoint(ApiEndpoints.chatbotAskChatbot));
+    final normalizedQuestion = question.trim();
+    if (normalizedQuestion.isEmpty) {
+      throw const ApiException(message: 'Vui long nhap cau hoi cho chatbot.');
+    }
 
-      late final http.Response response;
-      try {
-        response = await _client
-            .post(
-              uri,
-              headers: {
-                'Authorization': 'Bearer $uid',
-                'Content-Type': 'application/json',
-              },
-              body: jsonEncode(request.toJson()),
-            )
-            .timeout(_askTimeout);
-      } on SocketException {
-        throw ApiException(
-          message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
-        );
-      } on TimeoutException {
-        throw const ApiException(
-          message: 'Chatbot dang xu ly du lieu. Vui long thu lai sau it giay.',
-        );
-      } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
-      }
+    final request = ChatbotAskRequest(
+      question: normalizedQuestion,
+      students: students.map(ChatbotStudentPayload.fromOcrItem).toList(),
+      conversationId: conversationId,
+    );
 
-      final bodyMap = _decodeJsonMap(response.body);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ApiException(
-          message: _extractErrorMessage(bodyMap),
-          statusCode: response.statusCode,
-        );
-      }
+    final uri = Uri.parse(ApiConfig.endpoint(ApiEndpoints.chatbotAskChatbot));
 
-      return ChatbotAskResponse.fromJson(bodyMap);
-    });
+    late final http.Response response;
+    try {
+      response = await _client
+          .post(
+            uri,
+            headers: {
+              'Authorization': 'Bearer $uid',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(_askTimeout);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+      );
+    } on TimeoutException {
+      throw const ApiException(
+        message: 'Chatbot dang xu ly du lieu. Vui long thu lai sau it giay.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'Loi ket noi: ${e.message}');
+    }
+
+    final bodyMap = _decodeJsonMap(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        message: _extractErrorMessage(bodyMap),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return ChatbotAskResponse.fromJson(bodyMap);
   }
 
   Map<String, dynamic> _decodeJsonMap(String body) {

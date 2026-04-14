@@ -242,6 +242,47 @@ class OcrService {
     });
   }
 
+  Future<OcrAllStudentDataResponse> getAllStudentDataSilently() async {
+    final uid = (AuthSession.instance.uid ?? '').trim();
+    if (uid.isEmpty) {
+      throw const ApiException(
+        message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+      );
+    }
+
+    final uri = Uri.parse(
+      ApiConfig.endpoint(ApiEndpoints.ocrGetAllStudentData),
+    );
+
+    late final http.Response response;
+    try {
+      response = await _client
+          .get(uri, headers: {'Authorization': 'Bearer $uid'})
+          .timeout(_saveTimeout);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+      );
+    } on TimeoutException {
+      throw const ApiException(
+        message: 'Ket noi server bi timeout. Vui long thu lai.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'Loi ket noi: ${e.message}');
+    }
+
+    final bodyMap = _decodeJsonMap(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        message: _extractErrorMessage(bodyMap),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return OcrAllStudentDataResponse.fromJson(bodyMap);
+  }
+
   Future<OcrUpdateReportCardResponse> updateReportCard({
     required String reportCardId,
     required OcrUpdateReportCardRequest request,
