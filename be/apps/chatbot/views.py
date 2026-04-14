@@ -2,21 +2,20 @@ import hashlib
 import os
 import json
 import uuid
+import time
+
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from apps.users.models import User
-import time
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMP_DIR = os.path.join(BASE_DIR, 'media', 'temp_files')
+TEMP_DIR = os.getenv('CHATBOT_TEMP_DIR', os.path.join(BASE_DIR, 'media', 'temp_files'))
 
-DIFY_API_URL = 'https://defy.oanhcuongdo.com/v1/chat-messages'
-DIFY_UPLOAD_URL = 'https://defy.oanhcuongdo.com/v1/files/upload'
-DIFY_API_KEY = 'app-cZec7tLlLvJDyYmnK0HgaQpf'
-
-import time
+DIFY_API_URL = os.getenv('DIFY_API_URL')
+DIFY_UPLOAD_URL = os.getenv('DIFY_UPLOAD_URL')
+DIFY_API_KEY = os.getenv('DIFY_API_KEY')
 
 
 def health_check(request):
@@ -51,6 +50,9 @@ def clean_temp_files(folder_path=TEMP_DIR, expire_seconds= 24 * 60 * 60):
 @require_http_methods(["POST"])
 def ask_chatbot(request):
     try:
+        if not DIFY_API_KEY:
+            return JsonResponse({'error': 'Thiếu cấu hình DIFY_API_KEY trên server'}, status=500)
+
         data = json.loads(request.body)
         question = data.get("question", "").strip()
         student_list = data.get("students", [])
@@ -61,7 +63,7 @@ def ask_chatbot(request):
             return JsonResponse({'error': 'Thiếu hoặc sai định dạng Authorization'}, status=401)
         uid = auth_header.split(" ")[1]
 
-        if not User.objects.filter(uid=uid).exists():
+        if User.objects.filter(uid=uid).first() is None:
             return JsonResponse({'error': 'Người dùng không tồn tại'}, status=404)
 
         if not student_list:
@@ -161,7 +163,7 @@ def ask_chatbot(request):
             "conversation_id": "",
             "files": [
                 {
-                    "type": "image",
+                    "type": "document",
                     "transfer_method": "local_file",
                     "upload_file_id": file_id
                 }
