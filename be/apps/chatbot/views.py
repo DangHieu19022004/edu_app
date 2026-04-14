@@ -46,6 +46,45 @@ def clean_temp_files(folder_path=TEMP_DIR, expire_seconds= 24 * 60 * 60):
         print(f"🧹 Đã xóa {deleted} file cũ trong {folder_path}")
 
 
+def _map_subject_years_for_chatbot(student_list):
+    year_map = {
+        "1": "10",
+        "2": "11",
+        "3": "12",
+        1: "10",
+        2: "11",
+        3: "12",
+    }
+
+    mapped_students = []
+    for student in student_list:
+        if not isinstance(student, dict):
+            mapped_students.append(student)
+            continue
+
+        student_copy = dict(student)
+        subjects = student_copy.get("subjects", [])
+
+        if isinstance(subjects, list):
+            mapped_subjects = []
+            for subject in subjects:
+                if not isinstance(subject, dict):
+                    mapped_subjects.append(subject)
+                    continue
+
+                subject_copy = dict(subject)
+                original_year = subject_copy.get("year")
+                if original_year in year_map:
+                    subject_copy["year"] = year_map[original_year]
+                mapped_subjects.append(subject_copy)
+
+            student_copy["subjects"] = mapped_subjects
+
+        mapped_students.append(student_copy)
+
+    return mapped_students
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def ask_chatbot(request):
@@ -56,6 +95,7 @@ def ask_chatbot(request):
         data = json.loads(request.body)
         question = data.get("question", "").strip()
         student_list = data.get("students", [])
+        mapped_student_list = _map_subject_years_for_chatbot(student_list)
 
         # 🔐 Check token
         auth_header = request.headers.get("Authorization", "")
@@ -91,7 +131,7 @@ def ask_chatbot(request):
                 })
             else:
                 return JsonResponse({
-                    'error': 'Lỗi từ Dify',
+                    'error': 'Lỗi chatbot',
                     'status': response.status_code,
                     'detail': response.text
                 }, status=500)
@@ -100,7 +140,7 @@ def ask_chatbot(request):
         os.makedirs(TEMP_DIR, exist_ok=True)
         clean_temp_files()
         # 🔑 Tính hash danh sách học sinh để tránh upload lại khi giống nhau
-        student_str = json.dumps(student_list, ensure_ascii=False, sort_keys=True)
+        student_str = json.dumps(mapped_student_list, ensure_ascii=False, sort_keys=True)
         hash_key = hashlib.md5(student_str.encode("utf-8")).hexdigest()
         cache_file = os.path.join(TEMP_DIR, f"{uid}_{hash_key}.json")
         txt_file_name = f"student_{hash_key}.txt"
@@ -117,7 +157,7 @@ def ask_chatbot(request):
             # ✅ Nếu chưa có file txt thì tạo
             if not os.path.exists(txt_file_path):
                 with open(txt_file_path, "w", encoding="utf-8") as f:
-                    for student in student_list:
+                    for student in mapped_student_list:
                         f.write(json.dumps(student, ensure_ascii=False, indent=2) + "\n\n")
                 print("✅ File đã ghi vào:", txt_file_path)
             else:
