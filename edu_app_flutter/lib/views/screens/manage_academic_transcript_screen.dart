@@ -1,4 +1,5 @@
 import 'package:edu_app_flutter/constants/app_colors.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -316,7 +317,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Xoa lop thanh cong',
+        title: AppTexts.classroomDeleteSuccess,
         message: message,
       );
     } on ApiException catch (e) {
@@ -339,7 +340,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Khong the xoa lop. Vui long thu lai.'),
+          content: Text(AppTexts.classroomDeleteFailed),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -351,21 +352,21 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Xac nhan xoa lop'),
+          title: const Text(AppTexts.ConfirmDeleteClassroom),
           content: Text(
-            'Ban co chac chan muon xoa lop ${className.trim().isEmpty ? '' : className}?',
+            'Bạn có chắc chắn muốn xóa lớp ${className.trim().isEmpty ? '' : className}?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Huy'),
+              child: const Text('Hủy'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),
               ),
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Xoa'),
+              child: const Text('Xóa'),
             ),
           ],
         );
@@ -396,7 +397,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
           ),
           SizedBox(height: 4),
           Text(
-            'Danh sach hoc sinh trống',
+            AppTexts.emptyStudentInClass,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
@@ -443,7 +444,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            student.name.isEmpty ? 'Hoc sinh' : student.name,
+                            student.name.isEmpty ? AppTexts.emptyStudentName : student.name,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -452,7 +453,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Sua hoc ba',
+                          tooltip: AppTexts.putTranscriptDetail,
                           onPressed: () => _openStudentDetail(
                             student,
                             editable: true,
@@ -464,7 +465,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Xoa hoc ba',
+                          tooltip: AppTexts.deleteTranscript,
                           onPressed: () => _confirmAndDeleteStudent(student),
                           icon: const Icon(
                             Icons.delete_outline_rounded,
@@ -475,10 +476,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    _infoRow('Gioi tinh', student.gender),
-                    _infoRow('Ngay sinh', student.dob),
-                    _infoRow('Dien thoai', student.phone),
-                    _infoRow('Truong', schoolDisplay),
+                    _infoRow(AppTexts.gender, student.gender),
+                    _infoRow(AppTexts.dateOfBirth, student.dob),
+                    _infoRow(AppTexts.phone, student.phone),
+                    _infoRow(AppTexts.school, schoolDisplay),
                   ],
                 ),
               ),
@@ -497,8 +498,8 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     if (studentId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Khong tim thay hoc sinh',
-        message: 'Ban ghi hoc sinh khong co student_id hop le.',
+        title: AppTexts.invalidStudent,
+        message: AppTexts.invalidStudentDetail,
       );
       return;
     }
@@ -534,8 +535,8 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
     if (studentId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Khong tim thay hoc sinh',
-        message: 'Ban ghi hoc sinh khong co student_id hop le.',
+        title: AppTexts.invalidStudent,
+        message: AppTexts.invalidStudentDetail,
       );
       return;
     }
@@ -550,8 +551,8 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
         }
         await AppNoticeModal.showError(
           context,
-          title: 'Khong co hoc ba de xoa',
-          message: 'Hoc sinh nay chua co hoc ba da luu.',
+          title: AppTexts.invalidStudent,
+          message: AppTexts.invalidStudentDetail,
         );
         return;
       }
@@ -572,7 +573,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Xoa hoc ba thanh cong',
+        title: AppTexts.deleteTranscriptSuccess,
         message: message,
       );
     } on ApiException catch (e) {
@@ -591,7 +592,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the xoa hoc ba. Vui long thu lai.',
+        message: AppTexts.CannotDeleteTranscriptAlert,
       );
     }
   }
@@ -602,21 +603,21 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Xac nhan xoa hoc ba'),
+          title: const Text(AppTexts.ConfirmDeleteTranscript),
           content: Text(
-            'Ban co chac chan muon xoa hoc ba cua ${displayName.isEmpty ? 'hoc sinh nay' : displayName}?',
+            'Bạn có chắc chắn muốn xóa học bạ của ${displayName.isEmpty ? 'học sinh này' : displayName}?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Huy'),
+              child: const Text('Hủy'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),
               ),
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Xoa'),
+              child: const Text('Xóa'),
             ),
           ],
         );
@@ -682,10 +683,10 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Tao lop thanh cong',
+        title: AppTexts.classroomCreateSuccess,
         message: response.message.isNotEmpty
             ? response.message
-            : 'Da tao lop ${result.className} thanh cong',
+            : 'Đã tạo lớp ${result.className} thành công',
       );
     } on ApiException catch (e) {
       if (!mounted) {
@@ -707,7 +708,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Co loi xay ra khi tao lop. Vui long thu lai.'),
+          content: Text(AppTexts.classroomSaveFailed),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -767,7 +768,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Khong the tai danh sach lop. Vui long thu lai.'),
+          content: Text(AppTexts.classroomSaveFailed),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -830,7 +831,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Khong the tai danh sach hoc sinh. Vui long thu lai.'),
+          content: Text(AppTexts.studentSaveFailed),
           backgroundColor: Color(0xFFDC2626),
         ),
       );
@@ -894,7 +895,7 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
                 children: [
                   const Expanded(
                     child: Text(
-                      'Tao lop hoc',
+                      AppTexts.newClassroom,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -905,34 +906,34 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
-                    tooltip: 'Dong form',
+                    tooltip: AppTexts.closeForm,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               _buildInput(
                 controller: _classNameController,
-                label: 'Ten lop',
-                hint: 'Vi du: 10A1',
+                label: 'Tên lớp',
+                hint: 'Ví dụ: 10A1',
               ),
               const SizedBox(height: 10),
               _buildInput(
                 controller: _schoolNameController,
-                label: 'Ten truong',
-                hint: 'Vi du: THPT EduTeacher',
+                label: 'Tên trường',
+                hint: 'Ví dụ: THPT EduTeacher',
               ),
               const SizedBox(height: 10),
               _buildInput(
                 controller: _schoolYearController,
-                label: 'Nam hoc',
-                hint: 'Vi du: 2025-2026',
+                label: 'Năm học',
+                hint: 'Ví dụ: 2025-2026',
                 validator: (value) {
                   final text = (value ?? '').trim();
                   if (text.isEmpty) {
-                    return 'Vui long nhap nam hoc';
+                    return AppTexts.schoolYearRequired;
                   }
                   if (!_isValidSchoolYear(text)) {
-                    return 'Nam hoc dung dinh dang yyyy-yyyy';
+                    return AppTexts.invalidSchoolYear;
                   }
                   return null;
                 },
@@ -951,7 +952,7 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
                     ),
                   ),
                   child: const Text(
-                    'Xac nhan',
+                    AppTexts.confirm,
                     style: TextStyle(
                       fontSize: AppFontSizes.dashboardBody,
                       fontWeight: FontWeight.w700,
@@ -977,7 +978,7 @@ class _CreateClassroomDialogState extends State<_CreateClassroomDialog> {
       validator: validator ??
           (value) {
             if ((value ?? '').trim().isEmpty) {
-              return 'Vui long nhap $label';
+              return 'Vui lòng nhập $label';
             }
             return null;
           },

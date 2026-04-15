@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/models/chatbot_models.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -24,13 +25,13 @@ class ChatbotService {
     final uid = (AuthSession.instance.uid ?? '').trim();
     if (uid.isEmpty) {
       throw const ApiException(
-        message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        message: AppTexts.loginError,
       );
     }
 
     final normalizedQuestion = question.trim();
     if (normalizedQuestion.isEmpty) {
-      throw const ApiException(message: 'Vui long nhap cau hoi cho chatbot.');
+      throw const ApiException(message: AppTexts.chatbotInputHint);
     }
 
     final request = ChatbotAskRequest(
@@ -56,14 +57,14 @@ class ChatbotService {
     } on SocketException {
       throw ApiException(
         message:
-            'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+            AppTexts.ErrorAuth,
       );
     } on TimeoutException {
       throw const ApiException(
-        message: 'Chatbot dang xu ly du lieu. Vui long thu lai sau it giay.',
+        message: AppTexts.chatbotTimeout,
       );
     } on http.ClientException catch (e) {
-      throw ApiException(message: 'Loi ket noi: ${e.message}');
+      throw ApiException(message: AppTexts.ErrorAuth);
     }
 
     final bodyMap = _decodeJsonMap(response.body);
@@ -101,6 +102,6 @@ class ChatbotService {
       return detail;
     }
 
-    return 'Yeu cau chatbot that bai. Vui long thu lai.';
+    return AppTexts.ErrorAuth;
   }
 }

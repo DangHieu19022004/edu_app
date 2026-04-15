@@ -1,3 +1,4 @@
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/models/form_register_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:edu_app_flutter/services/auth_service.dart';
@@ -56,7 +57,7 @@ class RegisterController extends ChangeNotifier {
       return null;
     } catch (_) {
       _status = RegisterStatus.error;
-      _errorMessage = 'Unexpected error. Please try again.';
+      _errorMessage = AppTexts.loginError;
       notifyListeners();
       return null;
     }

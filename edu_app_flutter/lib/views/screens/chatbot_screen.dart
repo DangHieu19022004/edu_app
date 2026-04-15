@@ -11,6 +11,8 @@ import 'package:edu_app_flutter/views/widgets/chatbot/ai_typing_indicator.dart';
 import 'package:edu_app_flutter/views/widgets/chatbot/user_chat_bubble.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
 import 'package:flutter/material.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
+
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -166,9 +168,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Widget _buildSuggestionChips() {
     const suggestions = <String>[
-      'Phan tich hoc luc',
-      'Goi y lo trinh hoc',
-      'Tai lieu on tap',
+      AppTexts.chatbotHint1,
+      AppTexts.chatbotHint2,
+      AppTexts.chatbotHint3,
     ];
 
     return Wrap(
@@ -223,7 +225,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               child: TextField(
                 controller: _messageController,
                 decoration: const InputDecoration(
-                  hintText: 'Nhap tin nhan...',
+                  hintText: AppTexts.chatbotInputHint,
                   hintStyle: TextStyle(color: AppColors.inputHint),
                   border: InputBorder.none,
                 ),
@@ -306,7 +308,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     } catch (e) {
       final fallback = e is ApiException
           ? e.message
-          : 'Chatbot dang ban. Vui long thu lai sau it phut.';
+          : AppTexts.chatbotError;
 
       if (!mounted) {
         return;

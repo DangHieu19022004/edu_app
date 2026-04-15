@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/models/app_loading_model.dart';
 import 'package:edu_app_flutter/models/contact_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -22,7 +23,7 @@ class ContactService {
     final uid = (AuthSession.instance.uid ?? '').trim();
     if (uid.isEmpty) {
       throw const ApiException(
-        message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        message: AppTexts.ErrorAuth,
       );
     }
 
@@ -67,7 +68,7 @@ class ContactService {
       final teacherId = (AuthSession.instance.uid ?? '').trim();
       if (teacherId.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: AppTexts.ErrorAuth,
         );
       }
 
@@ -90,14 +91,14 @@ class ContactService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              AppTexts.ErrorAuth,
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: AppTexts.ErrorAuth,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.ErrorAuth);
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -135,7 +136,7 @@ class ContactService {
       final teacherId = (AuthSession.instance.uid ?? '').trim();
       if (teacherId.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: AppTexts.ErrorAuth
         );
       }
 
@@ -157,15 +158,14 @@ class ContactService {
             .timeout(_timeout);
       } on SocketException {
         throw ApiException(
-          message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+          message:AppTexts.ErrorAuth
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: AppTexts.ErrorAuth,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.ErrorAuth);
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -204,7 +204,7 @@ class ContactService {
     return AppLoadingModel.instance.track(() async {
       final emailId = id.trim();
       if (emailId.isEmpty) {
-        throw const ApiException(message: 'Email id khong hop le');
+        throw const ApiException(message: AppTexts.emailIdUnknown);
       }
 
       final uri = Uri.parse(
@@ -239,12 +239,12 @@ class ContactService {
           .timeout(_timeout);
     } on SocketException {
       throw ApiException(
-        message: 'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+        message: AppTexts.ErrorAuth,
       );
     } on TimeoutException {
-      throw const ApiException(message: 'Ket noi server bi timeout. Vui long thu lai.');
+      throw const ApiException(message: AppTexts.ErrorAuth);
     } on http.ClientException catch (e) {
-      throw ApiException(message: 'Loi ket noi: ${e.message}');
+      throw ApiException(message: AppTexts.ErrorAuth);
     }
 
     final bodyMap = _decodeJsonMap(response.body);
@@ -287,6 +287,6 @@ class ContactService {
       return message;
     }
 
-    return 'Thao tac that bai';
+    return AppTexts.ErrorAuth;
   }
 }

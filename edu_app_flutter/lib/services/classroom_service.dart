@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/models/app_loading_model.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
@@ -20,7 +21,7 @@ class ClassroomService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: AppTexts.ErrorAuth,
         );
       }
 
@@ -41,14 +42,14 @@ class ClassroomService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              AppTexts.ErrorAuth
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: AppTexts.ErrorAuth,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.ErrorAuth);
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -69,7 +70,7 @@ class ClassroomService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: AppTexts.ErrorAuth,
         );
       }
 
@@ -199,13 +200,13 @@ class ClassroomService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: AppTexts.ErrorAuth,
         );
       }
 
       final trimmedClassId = classId.trim();
       if (trimmedClassId.isEmpty) {
-        throw const ApiException(message: 'Khong tim thay lop can xoa.');
+        throw const ApiException(message: AppTexts.ErrorAuth);
       }
 
       final base = Uri.parse(ApiConfig.endpoint(ApiEndpoints.classroomDeleteClassroom));
@@ -228,15 +229,14 @@ class ClassroomService {
             .timeout(const Duration(seconds: 15));
       } on SocketException {
         throw ApiException(
-          message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+          message:AppTexts.ErrorAuth
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: AppTexts.ErrorAuth,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.ErrorAuth);
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -253,7 +253,7 @@ class ClassroomService {
         return message;
       }
 
-      return 'Xoa lop thanh cong';
+      return AppTexts.classroomDeleteSuccess;
     });
   }
 
@@ -286,6 +286,6 @@ class ClassroomService {
       return message;
     }
 
-    return 'Luu lop that bai';
+    return AppTexts.classroomSaveFailed;
   }
 }

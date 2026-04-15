@@ -90,7 +90,7 @@ class ProfileScreen extends StatelessWidget {
         ? user!.email.trim()
         : ((user?.phone ?? '').trim().isNotEmpty
             ? user!.phone.trim()
-            : 'Chua cap nhat thong tin');
+            : 'Chưa cập nhật thông tin');
 
     return Container(
       width: double.infinity,
@@ -165,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            displayName.isEmpty ? 'Nguoi dung' : displayName,
+            displayName.isEmpty ? 'Người dùng' : displayName,
             style: TextStyle(
               color: AppColors.white,
               fontSize: 28,

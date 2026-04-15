@@ -1,3 +1,4 @@
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/models/facebook_login_models.dart';
 import 'package:edu_app_flutter/models/form_login_models.dart';
 import 'package:edu_app_flutter/models/google_login_models.dart';
@@ -60,7 +61,7 @@ class LoginController extends ChangeNotifier {
       return null;
     } catch (_) {
       _status = LoginStatus.error;
-      _errorMessage = 'Unexpected error. Please try again.';
+      _errorMessage = AppTexts.loginError;
       notifyListeners();
       return null;
     }
@@ -90,7 +91,7 @@ class LoginController extends ChangeNotifier {
       return null;
     } catch (_) {
       _status = LoginStatus.error;
-      _errorMessage = 'Unexpected error. Please try again.';
+      _errorMessage = AppTexts.loginError;
       notifyListeners();
       return null;
     }
@@ -127,7 +128,7 @@ class LoginController extends ChangeNotifier {
       return null;
     } catch (_) {
       _status = LoginStatus.error;
-      _errorMessage = 'Unexpected error. Please try again.';
+      _errorMessage = AppTexts.loginError;
       notifyListeners();
       return null;
     }

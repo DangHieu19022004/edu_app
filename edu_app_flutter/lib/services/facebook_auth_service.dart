@@ -1,3 +1,4 @@
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -35,7 +36,7 @@ class FacebookAuthService {
         final message = result.message?.trim();
         throw ApiException(
           message: message == null || message.isEmpty
-              ? 'Dang nhap Facebook that bai.'
+              ? AppTexts.loginFBFailed
               : message,
         );
       }
@@ -43,7 +44,7 @@ class FacebookAuthService {
       final accessToken = result.accessToken;
       if (accessToken == null || accessToken.tokenString.isEmpty) {
         throw const ApiException(
-          message: 'Khong lay duoc Facebook access token.',
+          message: AppTexts.loginFBFailed,
         );
       }
 
@@ -58,7 +59,7 @@ class FacebookAuthService {
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
         throw const ApiException(
-          message: 'Firebase khong tra ve thong tin nguoi dung Facebook.',
+          message: AppTexts.loginFBFailed
         );
       }
 
@@ -107,7 +108,7 @@ class FacebookAuthService {
 
       if (uid.isEmpty || displayName.isEmpty) {
         throw const ApiException(
-          message: 'Khong lay duoc thong tin tai khoan Facebook.',
+          message: AppTexts.loginFBFailed,
         );
       }
 
@@ -120,26 +121,26 @@ class FacebookAuthService {
       final message = e.message?.trim();
       throw ApiException(
         message: message == null || message.isEmpty
-            ? 'Facebook SDK loi xac thuc.'
+            ? AppTexts.loginFBFailed
             : message,
       );
     } on FirebaseAuthException catch (e) {
       final message = e.message?.trim();
       throw ApiException(
         message: message == null || message.isEmpty
-            ? 'Firebase xac thuc Facebook that bai.'
+            ? AppTexts.loginFBFailed
             : message,
       );
     } on FirebaseException catch (e) {
       final message = e.message?.trim();
       throw ApiException(
         message: message == null || message.isEmpty
-            ? 'Firebase chua duoc cau hinh dung.'
+            ? AppTexts.loginFBFailed
             : message,
       );
     } catch (e) {
       throw ApiException(
-        message: 'Facebook login that bai. Chi tiet: ${e.toString()}',
+        message: AppTexts.loginFBFailed
       );
     }
   }

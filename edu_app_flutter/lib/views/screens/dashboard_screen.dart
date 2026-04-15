@@ -305,7 +305,7 @@ class _DashboardHeroHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Chao ${displayName.isEmpty ? 'ban' : displayName} 👋',
+                          'Chào ${displayName.isEmpty ? 'bạn' : displayName} 👋',
                           style: const TextStyle(
                             fontSize: AppFontSizes.dashboardGreeting,
                             fontWeight: FontWeight.w800,

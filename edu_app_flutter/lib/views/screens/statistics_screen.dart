@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:edu_app_flutter/constants/app_colors.dart';
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
@@ -124,7 +125,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return;
       }
       setState(() {
-        _errorMessage = 'Khong the tai du lieu thong ke. Vui long thu lai.';
+        _errorMessage = AppTexts.analysErrorLoading;
       });
     } finally {
       if (mounted) {
@@ -161,11 +162,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 else if (_errorMessage != null)
                   _buildErrorState()
                 else if (_allStudents.isEmpty)
-                  _buildEmptyState('Chua co du lieu hoc sinh de thong ke.')
+                  _buildEmptyState(AppTexts.analysInvalidData)
                 else if ((_selectedClassKey ?? '').trim().isEmpty)
-                  _buildEmptyState('Vui long chon lop de xem thong ke.')
+                  _buildEmptyState(AppTexts.analysInvalidClass)
                 else if (filteredStudents.isEmpty)
-                  _buildEmptyState('Bo loc hien tai khong co du lieu phu hop.')
+                  _buildEmptyState(AppTexts.analysNoData)
                 else ...[
                   _buildOverviewCards(statistics),
                   _buildDistributionCard(statistics.distribution),
@@ -415,7 +416,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           _WeaknessItem(
             subject: entry.key,
             score: entry.value,
-            improvement: 'Can cai thien ky nang mon ${entry.key}',
+            improvement: AppTexts.improvePerformanceSuggestion + entry.key,
           ),
         );
       }
@@ -427,7 +428,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           subject: entry.key,
           score: 0,
           improvement:
-              'Co ${entry.value.length} hoc sinh khong dat: ${entry.value.join(', ')}',
+              'Có ${entry.value.length} học sinh không đạt ${entry.value.join(', ')}',
         ),
       );
     }
@@ -756,7 +757,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildHeader() {
     final userName = (AuthSession.instance.user?.fullName ?? '').trim();
-    final displayName = userName.isEmpty ? 'Thay/Co' : userName;
+    final displayName = userName.isEmpty ? 'Thầy/ Cô' : userName;
 
     return Container(
       width: double.infinity,
@@ -784,7 +785,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
               const Expanded(
                 child: Text(
-                  'Phan tich hoc luc',
+                  AppTexts.analysTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.white,
@@ -803,7 +804,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Xin chao, $displayName',
+              'Xin chào, $displayName',
               style: const TextStyle(
                 color: Color(0xCCFFFFFF),
                 fontSize: AppFontSizes.dashboardBody,
@@ -815,7 +816,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Bao cao tong quat hoc luc',
+              AppTexts.analysOverall,
               style: TextStyle(
                 color: AppColors.white,
                 fontSize: AppFontSizes.dashboardTitle,
@@ -857,7 +858,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   Expanded(
                     child: _buildDropdown<String>(
-                      hint: 'Chon lop',
+                      hint: AppTexts.chooseClass,
                       value: _selectedClassKey,
                       items: classKeys,
                       itemLabel: (item) =>
@@ -872,7 +873,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildDropdown<_SemesterOption>(
-                      hint: 'Hoc ky',
+                      hint: AppTexts.chooseSemester,
                       value: _selectedSemester,
                       items: _SemesterOption.values,
                       itemLabel: (item) => item.label,
@@ -890,11 +891,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
               const SizedBox(height: 8),
               _buildDropdown<String>(
-                hint: 'Khoi',
+                hint: AppTexts.chooseGrade,
                 value: _selectedGrade,
                 items: const <String>[_allGrade, '10', '11', '12'],
                 itemLabel: (item) =>
-                    item == _allGrade ? 'Tat ca khoi' : 'Khoi $item',
+                    item == _allGrade ? AppTexts.AllGrade : AppTexts.chooseGrade + ' $item',
                 onChanged: (value) {
                   if (value == null) {
                     return;
@@ -968,7 +969,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tong quan (${statistics.studentCount} hoc sinh)',
+            'Tổng quan (${statistics.studentCount} học sinh)',
             style: const TextStyle(
               fontSize: AppFontSizes.dashboardTitle,
               fontWeight: FontWeight.w800,
@@ -986,7 +987,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   value: statistics.classAverage <= 0
                       ? '--'
                       : statistics.classAverage.toStringAsFixed(2),
-                  label: 'DTB lop',
+                  label: AppTexts.averageScoreClass,
                 ),
               ),
               const SizedBox(width: 8),
@@ -996,7 +997,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   iconBg: const Color(0xFFDCFCE7),
                   iconColor: const Color(0xFF16A34A),
                   value: '${statistics.gioiKhaPercent.toStringAsFixed(0)}%',
-                  label: 'Gioi + Kha',
+                  label: AppTexts.percentGioiKha,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1006,7 +1007,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   iconBg: const Color(0xFFFFEDD5),
                   iconColor: const Color(0xFFEA580C),
                   value: '${statistics.validStudentCount}',
-                  label: 'HS hop le',
+                  label: AppTexts.validStudentCount,
                 ),
               ),
             ],
@@ -1019,17 +1020,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildDistributionCard(_DistributionData distribution) {
     final buckets = <_DistributionBucket>[
       _DistributionBucket(
-        label: 'Xuat sac',
+        label: AppTexts.excellent,
         count: distribution.excellent,
         color: const Color(0xFF38A169),
       ),
       _DistributionBucket(
-        label: 'Kha',
+        label: AppTexts.good,
         count: distribution.good,
         color: const Color(0xFF3182CE),
       ),
       _DistributionBucket(
-        label: 'Can cai thien',
+        label: AppTexts.improvePerformanceSuggestion,
         count: distribution.needsImprovement,
         color: const Color(0xFFDD6B20),
       ),
@@ -1054,7 +1055,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Phan bo hoc luc',
+              AppTexts.CharTitle,
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 fontWeight: FontWeight.w800,
@@ -1106,7 +1107,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 const Expanded(
                   child: Text(
-                    'Xu huong GPA theo khoi',
+                    AppTexts.trendTitle,
                     style: TextStyle(
                       fontSize: AppFontSizes.dashboardBody,
                       fontWeight: FontWeight.w800,
@@ -1149,21 +1150,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Khoi 10',
+                  AppTexts.Grade10,
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardTiny,
                     color: AppColors.footer,
                   ),
                 ),
                 Text(
-                  'Khoi 11',
+                  AppTexts.Grade11,
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardTiny,
                     color: AppColors.footer,
                   ),
                 ),
                 Text(
-                  'Khoi 12',
+                  AppTexts.Grade12,
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardTiny,
                     color: AppColors.footer,
@@ -1196,7 +1197,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
                 SizedBox(width: 6),
                 Text(
-                  'Diem yeu can cai thien',
+                  AppTexts.weakSubjectSuggestion,
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardBody,
                     fontWeight: FontWeight.w800,
@@ -1208,7 +1209,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 12),
             if (weaknessItems.isEmpty)
               const Text(
-                'Khong co mon yeu theo nguong hien tai.',
+                AppTexts.noWeakSubjects,
                 style: TextStyle(
                   fontSize: AppFontSizes.dashboardCaption,
                   color: AppColors.subtitle,
@@ -1241,7 +1242,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Diem: ${item.score.toStringAsFixed(2)}',
+                            'Điểm: ${item.score.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: AppFontSizes.dashboardTiny,
                               color: AppColors.subtitle,
@@ -1285,7 +1286,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Icon(Icons.bolt_rounded, color: Color(0xFFF59E0B)),
                 SizedBox(width: 6),
                 Text(
-                  'Top mon hoc the manh',
+                  'Top môn học thể mạnh',
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardBody,
                     fontWeight: FontWeight.w800,
@@ -1297,7 +1298,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 12),
             if (strongSubjects.isEmpty)
               const Text(
-                'Chua du du lieu mon hoc.',
+                'Chưa có dữ liệu môn học.',
                 style: TextStyle(
                   fontSize: AppFontSizes.dashboardCaption,
                   color: AppColors.subtitle,
@@ -1336,7 +1337,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Khong tai duoc thong ke',
+              'Không tải được thống kê',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 fontWeight: FontWeight.w800,
@@ -1345,7 +1346,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMessage ?? 'Da xay ra loi.',
+              _errorMessage ?? 'Đã xảy ra lỗi.',
               style: const TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1356,7 +1357,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ElevatedButton.icon(
               onPressed: _loadStatistics,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Thu lai'),
+              label: const Text('Thử lại'),
             ),
           ],
         ),
@@ -1405,9 +1406,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 }
 
 enum _SemesterOption {
-  hk1('Hoc ky 1'),
-  hk2('Hoc ky 2'),
-  fullYear('Ca nam');
+  hk1('Học kỳ 1'),
+  hk2('Học kỳ 2'),
+  fullYear('Cả năm');
 
   const _SemesterOption(this.label);
   final String label;

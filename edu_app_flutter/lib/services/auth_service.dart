@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/api_endpoints.dart';
 import 'package:edu_app_flutter/models/auth_tokens.dart';
@@ -39,14 +39,14 @@ class AuthService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Neu ban dang dung dien thoai that, hay chay app voi --dart-define=API_BASE_URL=http://<IP-may-tinh>:8000',
+              AppTexts.loginError,
         );
       } on TimeoutException {
         throw ApiException(
-          message: 'Ket noi server bi timeout. Vui long kiem tra backend va mang.',
+          message: AppTexts.loginError,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -88,14 +88,14 @@ class AuthService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Neu ban dang dung dien thoai that, hay chay app voi --dart-define=API_BASE_URL=http://<IP-may-tinh>:8000',
+              AppTexts.loginError,
         );
       } on TimeoutException {
         throw ApiException(
-          message: 'Ket noi server bi timeout. Vui long kiem tra backend va mang.',
+          message: AppTexts.loginError,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.loginError);
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -145,14 +145,14 @@ class AuthService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Neu ban dang dung dien thoai that, hay chay app voi --dart-define=API_BASE_URL=http://<IP-may-tinh>:8000',
+              AppTexts.loginError,
         );
       } on TimeoutException {
         throw ApiException(
-          message: 'Ket noi server bi timeout. Vui long kiem tra backend va mang.',
+          message: AppTexts.loginError,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.loginError);
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -196,14 +196,14 @@ class AuthService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Neu ban dang dung dien thoai that, hay chay app voi --dart-define=API_BASE_URL=http://<IP-may-tinh>:8000',
+              AppTexts.loginError,
         );
       } on TimeoutException {
         throw ApiException(
-          message: 'Ket noi server bi timeout. Vui long kiem tra backend va mang.',
+          message: AppTexts.loginError,
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: AppTexts.loginError);
       }
 
       final bodyMap = _decodeJsonMap(response.body);

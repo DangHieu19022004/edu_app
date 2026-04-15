@@ -772,7 +772,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
                       ),
                     )
                   : const Text(
-                      'Xac nhan',
+                      AppTexts.confirm,
                       style: TextStyle(
                         fontSize: AppFontSizes.dashboardBody,
                         fontWeight: FontWeight.w700,
@@ -806,7 +806,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Thong tin chung sinh vien',
+              AppTexts.detailStudentInfo,
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 fontWeight: FontWeight.w800,
@@ -814,16 +814,16 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            _buildEditableField('Ho ten', _nameController),
+            _buildEditableField(AppTexts.StudentName, _nameController),
             const SizedBox(height: 10),
-            _buildEditableField('Gioi tinh', _genderController),
+            _buildEditableField(AppTexts.gender, _genderController),
             const SizedBox(height: 10),
-            _buildEditableField('Ngay thang nam sinh', _dobController),
+            _buildEditableField(AppTexts.dateOfBirth, _dobController),
             const SizedBox(height: 10),
-            _buildEditableField('So dien thoai', _phoneController),
+            _buildEditableField(AppTexts.phone, _phoneController),
             const SizedBox(height: 12),
             const Text(
-              'Lop',
+              AppTexts.classroom,
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 fontWeight: FontWeight.w700,
@@ -860,8 +860,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
                 ),
               ),
             const SizedBox(height: 10),
-            _buildInfoRow('Truong', schoolName),
-            _buildInfoRow('Lop', className),
+            _buildInfoRow(AppTexts.school, schoolName),
+            _buildInfoRow(AppTexts.classroom, className),
           ],
         ),
       );
@@ -884,7 +884,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Thong tin chung sinh vien',
+            AppTexts.detailStudentInfo,
             style: TextStyle(
               fontSize: AppFontSizes.dashboardBody,
               fontWeight: FontWeight.w800,
@@ -892,12 +892,12 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          _buildInfoRow('Ho ten', studentName),
-          _buildInfoRow('Lop', className),
-          _buildInfoRow('Gioi tinh', gender),
-          _buildInfoRow('Ngay thang nam sinh', dob),
-          _buildInfoRow('Truong', schoolName),
-          _buildInfoRow('So dien thoai', phone),
+          _buildInfoRow(AppTexts.StudentName, studentName),
+          _buildInfoRow(AppTexts.classroom, className),
+          _buildInfoRow(AppTexts.gender, gender),
+          _buildInfoRow(AppTexts.dateOfBirth, dob),
+          _buildInfoRow(AppTexts.school, schoolName),
+          _buildInfoRow(AppTexts.phone, phone),
         ],
       ),
     );
@@ -933,7 +933,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
                 ? const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Khong co du lieu diem cho lop nay.',
+                      AppTexts.detailNoScoresForGrade,
                       style: TextStyle(
                         fontSize: AppFontSizes.dashboardCaption,
                         color: AppColors.subtitle,
@@ -992,7 +992,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
               ),
             ),
             child: Text(
-              comment.isNotEmpty ? comment : 'Chua co nhan xet tu giao vien.',
+              comment.isNotEmpty ? comment : AppTexts.detailNoTeacherComment,
               style: const TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 height: 1.45,

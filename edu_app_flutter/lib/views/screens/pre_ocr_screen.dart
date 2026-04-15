@@ -155,7 +155,7 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Anh ${index + 1}',
+                          'Ảnh ${index + 1}',
                           style: const TextStyle(
                             fontSize: AppFontSizes.dashboardBody,
                             fontWeight: FontWeight.w700,
@@ -494,7 +494,7 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Anh ${index + 1}',
+                            'Ảnh ${index + 1}',
                             style: const TextStyle(
                               fontSize: AppFontSizes.dashboardCaption,
                               color: AppColors.label,
