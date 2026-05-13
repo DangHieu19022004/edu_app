@@ -8,7 +8,7 @@ class UserChatBubble extends StatelessWidget {
     super.key,
     required this.message,
     required this.avatar,
-    this.label = 'Ban',
+    this.label = 'Bạn',
   });
 
   final String message;

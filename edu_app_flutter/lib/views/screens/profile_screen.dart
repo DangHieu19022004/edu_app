@@ -190,7 +190,7 @@ class ProfileScreen extends StatelessWidget {
               border: Border.all(color: Colors.white24),
             ),
             child: const Text(
-              'THÀNH VIÊN TỪ 2022',
+              'THÀNH VIÊN',
               style: TextStyle(
                 color: AppColors.white,
                 fontSize: AppFontSizes.dashboardTiny,

@@ -3,7 +3,7 @@ import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:flutter/material.dart';
 
 class AiTypingIndicator extends StatefulWidget {
-  const AiTypingIndicator({super.key, this.label = 'Tu van AI'});
+  const AiTypingIndicator({super.key, this.label = 'EduBot'});
 
   final String label;
 

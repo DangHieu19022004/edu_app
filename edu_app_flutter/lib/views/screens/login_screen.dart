@@ -130,11 +130,11 @@ class _LoginCardState extends State<_LoginCard> {
                 ? _loginController.googleResponse!.message
                 : (_loginController.facebookResponse?.message.isNotEmpty == true
                       ? _loginController.facebookResponse!.message
-                      : 'Chao mung ban quay tro lai voi EduTeacher.'));
+                      : 'Chào mừng bạn quay lại với EduTeacher.'));
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Dang nhap thanh cong',
+        title: 'Đăng nhập thành công',
         message: successMessage,
         showAction: false,
         autoDismissDuration: const Duration(milliseconds: 1500),
@@ -161,8 +161,8 @@ class _LoginCardState extends State<_LoginCard> {
     if (emailOrPhone.isEmpty || password.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Thieu thong tin',
-        message: 'Vui long nhap day du email/so dien thoai va mat khau.',
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng nhập đầy đủ email/số điện thoại và mật khẩu.',
       );
       return;
     }
@@ -188,7 +188,7 @@ class _LoginCardState extends State<_LoginCard> {
 
       await AppNoticeModal.showError(
         context,
-        title: 'Google Sign-In that bai',
+        title: 'Đăng nhập Google thất bại',
         message: e.message,
       );
     }
@@ -213,7 +213,7 @@ class _LoginCardState extends State<_LoginCard> {
 
       await AppNoticeModal.showError(
         context,
-        title: 'Facebook login that bai',
+        title: 'Đăng nhập Facebook thất bại',
         message: e.message,
       );
     }

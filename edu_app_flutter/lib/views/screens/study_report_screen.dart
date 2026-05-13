@@ -127,7 +127,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the tai danh sach lop. Vui long thu lai.',
+        message: 'Không thể tải danh sách, vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -167,7 +167,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the tai danh sach hoc sinh. Vui long thu lai.',
+        message: 'Không thể tải danh sách học sinh. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -195,7 +195,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the tai lich su gui email. Vui long thu lai.',
+        message: 'Không thể tải lịch sử gửi email. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -209,7 +209,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     if (emailId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        message: 'Khong tim thay id lich email de xoa.',
+        message: 'Không tìm thấy id lịch email để xóa.',
       );
       return;
     }
@@ -218,16 +218,16 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Xoa lich email'),
-          content: const Text('Ban co chac muon xoa lich gui email nay khong?'),
+          title: const Text('Xóa lịch email'),
+          content: const Text('Bạn có chắc muốn xóa lịch gửi email này không?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Huy'),
+              child: const Text('Hủy'),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Xoa'),
+              child: const Text('Xóa'),
             ),
           ],
         );
@@ -254,8 +254,8 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Xoa thanh cong',
-        message: response.message.isEmpty ? 'Da xoa lich email.' : response.message,
+        title: 'Xóa thành công',
+        message: response.message.isEmpty ? 'Đã xóa lịch email.' : response.message,
       );
     } on ApiException catch (e) {
       if (!mounted) {
@@ -268,7 +268,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the xoa lich email. Vui long thu lai.',
+        message: 'Không thể xóa lịch email. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -304,7 +304,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the tai danh sach phu huynh. Vui long thu lai.',
+        message: 'Không thể tải danh sách phụ huynh. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -323,7 +323,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     if (teacherId.isEmpty || studentId.isEmpty || fullName.isEmpty || email.isEmpty || phone.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        message: 'Vui long nhap day du thong tin lien he.',
+        message: 'Vui lòng nhập đầy đủ thông tin liên hệ.',
       );
       return;
     }
@@ -351,8 +351,8 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Them lien he thanh cong',
-        message: response.message.isEmpty ? 'Da luu thong tin phu huynh.' : response.message,
+        title: 'Thêm liên hệ thành công',
+        message: response.message.isEmpty ? 'Đã lưu thông tin phụ huynh.' : response.message,
       );
     } on ApiException catch (e) {
       if (!mounted) {
@@ -365,7 +365,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the them lien he. Vui long thu lai.',
+        message: 'Không thể thêm liên hệ, vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -415,7 +415,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         scheduledAt == null) {
       await AppNoticeModal.showError(
         context,
-        message: 'Vui long chon lop, chon hoc sinh va nhap day du thong tin lap lich.',
+        message: 'Vui lòng chọn lớp, chọn học sinh và nhập đầy đủ thông tin lập lịch.',
       );
       return;
     }
@@ -435,7 +435,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ? parent.studentId
             : parent.studentName.trim();
         if (recipient.isEmpty) {
-          failedTargets.add('$name (thieu email)');
+          failedTargets.add('$name (thiếu email)');
           continue;
         }
 
@@ -458,7 +458,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         } on ApiException catch (e) {
           failedTargets.add('$name (${e.message})');
         } catch (_) {
-          failedTargets.add('$name (loi khong xac dinh)');
+          failedTargets.add('$name (lỗi không xác định)');
         }
       }
 
@@ -482,21 +482,21 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         await AppNoticeModal.showError(
           context,
           message: failedTargets.isEmpty
-              ? 'Khong lap lich duoc email nao. Vui long kiem tra lai du lieu.'
-              : 'Khong lap lich duoc email nao. Chi tiet: ${failedTargets.join(', ')}',
+              ? 'Không lập lịch được email nào. Vui lòng kiểm tra lại dữ liệu.'
+              : 'Không lập lịch được email nào. Chi tiết: ${failedTargets.join(', ')}',
         );
       } else if (failedTargets.isEmpty) {
         await AppNoticeModal.showSuccess(
           context,
-          title: 'Lap lich thanh cong',
-          message: 'Da lap lich $successCount email (moi email 1 request).',
+          title: 'Lập lịch thành công',
+          message: 'Đã lập lịch $successCount email',
         );
       } else {
         await AppNoticeModal.showSuccess(
           context,
-          title: 'Lap lich mot phan',
+          title: 'Lập lịch một phần',
           message:
-              'Da lap lich $successCount email. Khong thanh cong: ${failedTargets.join(', ')}',
+              'Đã lập lịch $successCount email. Không thành công: ${failedTargets.join(', ')}',
         );
       }
     } on ApiException catch (e) {
@@ -510,7 +510,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the lap lich gui email. Vui long thu lai.',
+        message: 'Không thể lập lịch gửi email. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -526,7 +526,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     if (teacherId.isEmpty || _selectedScheduleParentIds.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        message: 'Vui long chon lop va chon hoc sinh truoc khi gui ngay.',
+        message: 'Vui lòng chọn lớp và chọn học sinh trước khi gửi ngay.',
       );
       return;
     }
@@ -546,7 +546,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ? parent.studentId
             : parent.studentName.trim();
         if (recipient.isEmpty) {
-          failedTargets.add('$name (thieu email)');
+          failedTargets.add('$name (thiếu email)');
           continue;
         }
 
@@ -568,7 +568,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         } on ApiException catch (e) {
           failedTargets.add('$name (${e.message})');
         } catch (_) {
-          failedTargets.add('$name (loi khong xac dinh)');
+          failedTargets.add('$name (lỗi không xác định)');
         }
       }
 
@@ -580,21 +580,21 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
         await AppNoticeModal.showError(
           context,
           message: failedTargets.isEmpty
-              ? 'Khong gui duoc email nao. Vui long kiem tra lai du lieu.'
-              : 'Khong gui duoc email nao. Chi tiet: ${failedTargets.join(', ')}',
+              ? 'Không gửi được email nào. Vui lòng kiểm tra lại dữ liệu.'
+              : 'Không gửi được email nào. Chi tiết: ${failedTargets.join(', ')}',
         );
       } else if (failedTargets.isEmpty) {
         await AppNoticeModal.showSuccess(
           context,
-          title: 'Gui ngay thanh cong',
-          message: 'Da gui ngay $successCount email (moi email 1 request).',
+          title: 'Gửi ngay thành công',
+          message: 'Đã gửi ngay $successCount email',
         );
       } else {
         await AppNoticeModal.showSuccess(
           context,
-          title: 'Gui ngay mot phan',
+          title: 'Gửi ngay một phần',
           message:
-              'Da gui ngay $successCount email. Khong thanh cong: ${failedTargets.join(', ')}',
+              'Đã gửi ngay $successCount email. Không thành công: ${failedTargets.join(', ')}',
         );
       }
 
@@ -613,7 +613,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the gui email ngay luc nay. Vui long thu lai.',
+        message: 'Không thể gửi email ngay lúc này. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -751,9 +751,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   String _buildScheduleSubjectPreviewTemplate() {
     final className = _selectedScheduleClassName().trim();
     if (className.isNotEmpty) {
-      return 'Thong bao hoc tap lop $className - [TEN HOC SINH]';
+      return 'Thông báo học tập lớp $className - [TEN HOC SINH]';
     }
-    return 'Thong bao hoc tap - [TEN HOC SINH]';
+    return 'Thông báo học tập - [TEN HOC SINH]';
   }
 
   String _buildScheduleSubjectForParent({
@@ -768,9 +768,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     String subject = subjectTemplate.trim();
     if (subject.isEmpty) {
       if (className.isNotEmpty) {
-        return 'Thong bao hoc tap lop $className - $studentName';
+        return 'Thông báo học tập lớp $className - $studentName';
       }
-      return 'Thong bao hoc tap - $studentName';
+      return 'Thông báo học tập - $studentName';
     }
 
     subject = subject
@@ -781,22 +781,22 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
   String _buildScheduleMessagePreviewTemplate() {
     return [
-      'Mau noi dung se gui cho tung phu huynh:',
+      'Mẫu nội dung sẽ gửi cho từng phụ huynh:',
       '',
-      'Kinh gui Quy phu huynh [TEN PHU HUYNH],',
+      'Kinh gửi Quý phụ huynh [TEN PHU HUYNH],',
       '',
-      'Nha truong gui thong tin hoc tap cua hoc sinh [TEN HOC SINH]:',
+      'Nhà trường gửi thông tin học tập của học sinh [TEN HOC SINH]:',
       '- Lop: [TEN LOP]',
       '- Truong: [TEN TRUONG]',
       '- Gioi tinh: [GIOI TINH]',
       '- Ngay sinh: [NGAY SINH]',
       '- So dien thoai: [SO DIEN THOAI]',
       '',
-      'Bang diem:',
+      'Bảng điểm:',
       '- [NAM HOC] [MON]: HK1 ..., HK2 ..., Ca nam ...',
       '',
-      'Quy phu huynh vui long theo doi va phoi hop cung giao vien chu nhiem.',
-      'Tran trong.',
+      'Quy phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
+      'Trân trọng.',
     ].join('\n');
   }
 
@@ -814,28 +814,28 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     final phone = student?.phone.trim() ?? '';
 
     return [
-      'Kinh gui quy phu huynh ${parent.parentName.trim().isEmpty ? '' : parent.parentName.trim()},',
+      'Kinh gửi Quý phụ huynh ${parent.parentName.trim().isEmpty ? '' : parent.parentName.trim()},',
       '',
-      'Nha truong gui thong tin hoc sinh nhu sau:',
-      '- Ho ten hoc sinh: $studentName',
-      '- Lop: ${className.isEmpty ? '--' : className}',
-      '- Truong: ${schoolName.isEmpty ? '--' : schoolName}',
-      '- Gioi tinh: ${gender.isEmpty ? '--' : gender}',
-      '- Ngay sinh: ${dob.isEmpty ? '--' : dob}',
-      '- So dien thoai hoc sinh: ${phone.isEmpty ? '--' : phone}',
+      'Nhà trường gửi thông tin học sinh như sau:',
+      '- Họ tên học sinh: $studentName',
+      '- Lớp: ${className.isEmpty ? '--' : className}',
+      '- Trường: ${schoolName.isEmpty ? '--' : schoolName}',
+      '- Giới tính: ${gender.isEmpty ? '--' : gender}',
+      '- Ngày sinh: ${dob.isEmpty ? '--' : dob}',
+      '- Số điện thoại học sinh: ${phone.isEmpty ? '--' : phone}',
       '',
-      'Bang diem:',
+      'Bảng điểm:',
       scoreSummary,
       '',
-      'Quy phu huynh vui long theo doi va phoi hop cung giao vien chu nhiem.',
-      'Tran trong.',
+      'Quy phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
+      'Trân trọng.',
     ].join('\n');
   }
 
   Future<String> _buildScoreSummaryForEmail(String studentId) async {
     final normalizedStudentId = studentId.trim();
     if (normalizedStudentId.isEmpty) {
-      return 'Chua co student_id de lay bang diem.';
+      return 'Chưa có student_id để lấy bảng điểm.';
     }
 
     final cached = _scoreSummaryCache[normalizedStudentId];
@@ -860,11 +860,11 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       final lines = <String>[];
       if (classList.isEmpty) {
-        lines.add('- Chua co du lieu bang diem.');
+        lines.add('- Chưa có dữ liệu bảng điểm.');
       } else {
         for (final classGroup in classList) {
           final title = classGroup.className.trim().isEmpty
-              ? 'Nam hoc khong xac dinh'
+              ? 'Năm học không xác định'
               : classGroup.className.trim();
           lines.add('• $title');
 
@@ -877,7 +877,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             );
 
           if (subjects.isEmpty) {
-            lines.add('  - Chua co mon hoc.');
+            lines.add('  - Chưa có môn học.');
             continue;
           }
 
@@ -896,9 +896,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       _scoreSummaryCache[normalizedStudentId] = summary;
       return summary;
     } on ApiException {
-      return '- Khong lay duoc bang diem tu he thong vao luc nay.';
+      return '- Không lấy được bảng điểm do lỗi từ hệ thống. Vui lòng thử lại sau.';
     } catch (_) {
-      return '- Khong lay duoc bang diem tu he thong vao luc nay.';
+      return '- Không lấy được bảng điểm từ hệ thống vào lúc này.';
     }
   }
 
@@ -934,8 +934,8 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             Column(
               children: [
                 OcrFlowHeader(
-                  title: 'Bao cao hoc tap',
-                  subtitle: 'Them lien he, lap lich va theo doi email',
+                  title: 'Báo cáo học tập',
+                  subtitle: 'Thêm liên hệ, lập lịch và theo dõi email',
                   onBack: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
@@ -972,9 +972,9 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _buildTabChip(0, 'Them lien he', Icons.person_add_alt_1_rounded),
-        _buildTabChip(1, 'Lap lich email', Icons.schedule_send_rounded),
-        _buildTabChip(2, 'Lich su gui', Icons.history_rounded),
+        _buildTabChip(0, 'Thêm liên hệ', Icons.person_add_alt_1_rounded),
+        _buildTabChip(1, 'Lập lịch email', Icons.schedule_send_rounded),
+        _buildTabChip(2, 'Lịch sử gửi', Icons.history_rounded),
       ],
     );
   }
@@ -1006,12 +1006,12 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     final selectedClassId = _selectedClassId;
 
     return _buildPanel(
-      title: 'Them lien he phu huynh',
+      title: 'Thêm liên hệ phụ huynh',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Chon lop',
+            'Chọn lớp',
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
               color: AppColors.subtitle,
@@ -1027,7 +1027,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             )
           else if (_classrooms.isEmpty)
             const Text(
-              'Chua co lop. Vui long tao lop truoc.',
+              'Chưa có lớp. Vui lòng tạo lớp trước.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1066,7 +1066,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ),
           const SizedBox(height: 10),
           const Text(
-            'Chon hoc sinh',
+            'Chọn học sinh',
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
               color: AppColors.subtitle,
@@ -1082,7 +1082,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             )
           else if (_students.isEmpty)
             const Text(
-              'Lop nay chua co hoc sinh.',
+              'Lớp này chưa có học sinh',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1118,11 +1118,11 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             const SizedBox(height: 8),
           ],
           const SizedBox(height: 10),
-          _buildInput(_parentNameController, 'Ho ten phu huynh'),
+          _buildInput(_parentNameController, 'Họ tên phụ huynh'),
           const SizedBox(height: 10),
           _buildInput(_parentEmailController, 'Email', keyboardType: TextInputType.emailAddress),
           const SizedBox(height: 10),
-          _buildInput(_parentPhoneController, 'So dien thoai', keyboardType: TextInputType.phone),
+          _buildInput(_parentPhoneController, 'Số điện thoại', keyboardType: TextInputType.phone),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
@@ -1135,7 +1135,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save_rounded),
-              label: const Text('Them lien he'),
+              label: const Text('Thêm liên hệ'),
             ),
           ),
           const SizedBox(height: 14),
@@ -1143,7 +1143,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             children: [
               const Expanded(
                 child: Text(
-                  'Danh sach lien he phu huynh',
+                  'Danh sách liên hệ phụ huynh',
                   style: TextStyle(
                     fontSize: AppFontSizes.dashboardBody,
                     fontWeight: FontWeight.w800,
@@ -1154,7 +1154,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
               TextButton.icon(
                 onPressed: _isLoadingParents ? null : _loadParents,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Tai lai'),
+                label: const Text('Tải lại'),
               ),
             ],
           ),
@@ -1167,7 +1167,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             const Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
-                'Chua co lien he phu huynh nao.',
+                'Chưa có liên hệ phụ huynh nào.',
                 style: TextStyle(
                   fontSize: AppFontSizes.dashboardCaption,
                   color: AppColors.subtitle,
@@ -1195,7 +1195,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                     children: [
                       Text(
                         parent.parentName.isEmpty
-                            ? 'Phu huynh'
+                            ? 'Phụ huynh'
                             : parent.parentName,
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardBody,
@@ -1213,7 +1213,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         ),
                       ),
                       Text(
-                        'Dien thoai: ${parent.phone}',
+                        'Điện thoại: ${parent.phone}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1221,7 +1221,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         ),
                       ),
                       Text(
-                        'Hoc sinh: ${parent.studentName.isEmpty ? parent.studentId : parent.studentName}',
+                        'Học sinh: ${parent.studentName.isEmpty ? parent.studentId : parent.studentName}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1229,7 +1229,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         ),
                       ),
                       Text(
-                        'Lop: ${className.isEmpty ? '--' : className}',
+                        'Lớp: ${className.isEmpty ? '--' : className}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1237,7 +1237,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         ),
                       ),
                       Text(
-                        'Truong: ${schoolName.isEmpty ? '--' : schoolName}',
+                        'Trường: ${schoolName.isEmpty ? '--' : schoolName}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1257,16 +1257,16 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
   Widget _buildScheduleTab() {
     final scheduledAt = _scheduledAt;
     final scheduledText = scheduledAt == null
-        ? 'Chua chon thoi gian'
+        ? 'Chưa chọn thời gian'
         : '${scheduledAt.day.toString().padLeft(2, '0')}/${scheduledAt.month.toString().padLeft(2, '0')}/${scheduledAt.year} ${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}';
 
     return _buildPanel(
-      title: 'Lap lich gui email',
+      title: 'Lập lịch gửi email',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Chon lop',
+            'Chọn lớp',
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
               color: AppColors.subtitle,
@@ -1282,7 +1282,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             )
           else if (_classrooms.isEmpty)
             const Text(
-              'Chua co lop. Vui long tao lop truoc.',
+              'Chưa có lớp. Vui lòng tạo lớp trước.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1314,7 +1314,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             ),
           const SizedBox(height: 10),
           const Text(
-            'Chon hoc sinh va email phu huynh',
+            'Chọn học sinh và email phụ huynh',
             style: TextStyle(
               fontSize: AppFontSizes.dashboardCaption,
               color: AppColors.subtitle,
@@ -1330,7 +1330,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             )
           else if ((_selectedScheduleClassId ?? '').isEmpty)
             const Text(
-              'Vui long chon lop de hien thi danh sach hoc sinh.',
+              'Vui lòng chọn lớp để hiển thị danh sách học sinh.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1339,7 +1339,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             )
           else if (_scheduleParentsBySelectedClass().isEmpty)
             const Text(
-              'Lop nay chua co lien he phu huynh.',
+              'Lớp này chưa có liên hệ phụ huynh.',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardCaption,
                 color: AppColors.subtitle,
@@ -1374,7 +1374,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         Expanded(
                           flex: 5,
                           child: Text(
-                            'Ten hoc sinh',
+                            'Tên học sinh',
                             style: TextStyle(
                               fontSize: AppFontSizes.dashboardCaption,
                               color: AppColors.title,
@@ -1385,7 +1385,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         Expanded(
                           flex: 6,
                           child: Text(
-                            'Email phu huynh',
+                            'Email phụ huynh',
                             style: TextStyle(
                               fontSize: AppFontSizes.dashboardCaption,
                               color: AppColors.title,
@@ -1465,7 +1465,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    'Dang tao noi dung email tu dong...',
+                    'Đang tạo nội dung email tự động...',
                     style: TextStyle(
                       fontSize: AppFontSizes.dashboardCaption,
                       color: AppColors.subtitle,
@@ -1476,18 +1476,18 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
               ),
             ),
           const SizedBox(height: 10),
-          _buildInput(_mailSubjectController, 'Tieu de'),
+          _buildInput(_mailSubjectController, 'Tiêu đề'),
           const SizedBox(height: 10),
           _buildInput(
             _mailRecipientController,
-            'Nguoi nhan',
+            'Người nhận',
             keyboardType: TextInputType.emailAddress,
             readOnly: true,
           ),
           const SizedBox(height: 10),
           _buildInput(
             _mailMessageController,
-            'Noi dung',
+            'Nội dung',
             minLines: 4,
             maxLines: 6,
             readOnly: true,
@@ -1517,7 +1517,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                 ),
                 TextButton(
                   onPressed: _pickScheduleDateTime,
-                  child: const Text('Chon'),
+                  child: const Text('Chọn'),
                 ),
               ],
             ),
@@ -1536,7 +1536,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.schedule_send_rounded),
-                  label: const Text('Lap lich gui'),
+                  label: const Text('Lập lịch gửi'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1551,7 +1551,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.send_rounded),
-                  label: const Text('Gui ngay'),
+                  label: const Text('Gửi ngay'),
                 ),
               ),
             ],
@@ -1563,7 +1563,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
   Widget _buildHistoryTab() {
     return _buildPanel(
-      title: 'Lich su gui email',
+      title: 'Lịch sử gửi email',
       child: Column(
         children: [
           Align(
@@ -1571,7 +1571,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             child: TextButton.icon(
               onPressed: _isLoadingHistory ? null : _loadHistory,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Tai lai'),
+              label: const Text('Tải lại'),
             ),
           ),
           if (_isLoadingHistory)
@@ -1583,7 +1583,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                'Chua co lich su gui email.',
+                'Chưa có lịch sử gửi email.',
                 style: TextStyle(
                   fontSize: AppFontSizes.dashboardCaption,
                   color: AppColors.subtitle,
@@ -1612,7 +1612,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              item.subject.isEmpty ? 'Khong co tieu de' : item.subject,
+                              item.subject.isEmpty ? 'Không có tiêu đề' : item.subject,
                               style: const TextStyle(
                                 fontSize: AppFontSizes.dashboardBody,
                                 color: AppColors.title,
@@ -1626,7 +1626,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                                 : () {
                                     _deleteScheduledEmail(item);
                                   },
-                            tooltip: 'Xoa lich email',
+                            tooltip: 'Xóa lịch email',
                             icon: isDeleting
                                 ? const SizedBox(
                                     width: 18,
@@ -1642,7 +1642,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Nguoi nhan: ${item.recipients}',
+                        'Người nhận: ${item.recipients}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1651,7 +1651,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Thoi gian: ${item.scheduledDate}',
+                        'Thời gian: ${item.scheduledDate}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.subtitle,
@@ -1660,7 +1660,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Trang thai: ${item.status}',
+                        'Trạng thái: ${item.status}',
                         style: const TextStyle(
                           fontSize: AppFontSizes.dashboardCaption,
                           color: AppColors.primary,

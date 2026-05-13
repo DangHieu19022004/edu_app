@@ -44,7 +44,7 @@ class _SigninScreenState extends State<SigninScreen> {
     if (_registerController.status == RegisterStatus.success) {
       await AppNoticeModal.showSuccess(
         context,
-        message: 'Tao tai khoan thanh cong',
+        message: 'Tạo tài khoản thành công',
       );
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -67,7 +67,7 @@ class _SigninScreenState extends State<SigninScreen> {
         password.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        message: 'Vui long nhap day du thong tin',
+        message: 'Vui lòng nhập đầy đủ thông tin',
       );
       return;
     }
@@ -75,7 +75,7 @@ class _SigninScreenState extends State<SigninScreen> {
     if (password.length < 6) {
       await AppNoticeModal.showError(
         context,
-        message: 'Mat khau toi thieu 6 ky tu',
+        message: 'Mật khẩu tối thiểu 6 ký tự',
       );
       return;
     }
@@ -94,7 +94,7 @@ class _SigninScreenState extends State<SigninScreen> {
       type: AppNoticeType.info,
       title: 'Facebook login',
       message:
-          'Tinh nang dang duoc hoan thien. Ban co the dung Google login truoc.',
+          'Tính năng đang được hoàn thiện. Bạn có thể dùng Google login trước.',
     );
   }
 
@@ -221,8 +221,8 @@ class _SigninScreenState extends State<SigninScreen> {
                     ),
                     const SizedBox(height: 14),
                     _SignInputField(
-                      label: 'So dien thoai',
-                      hintText: 'Nhap so dien thoai',
+                      label: 'Số điện thoại',
+                      hintText: 'Nhập số điện thoại',
                       icon: AppIcons.phone,
                       keyboardType: TextInputType.phone,
                       controller: _phoneController,

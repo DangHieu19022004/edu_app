@@ -544,19 +544,19 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Xac nhan xoa hoc ba'),
-          content: const Text('Ban co chac chan muon xoa hoc ba nay khong?'),
+          title: const Text('Xác nhận xóa học bạ'),
+          content: const Text('Bạn có chắc chắn muốn xóa học bạ này không? Hành động này không thể hoàn tác.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Huy'),
+              child: const Text('Hủy'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),
               ),
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Xoa'),
+              child: const Text('Xóa'),
             ),
           ],
         );
@@ -578,8 +578,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     if (reportCardId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Khong co hoc ba de xoa',
-        message: 'Khong tim thay report_card_id hop le.',
+        title: 'Không có học bạ để xóa',
+        message: 'Không tìm thấy học bạ hợp lệ.',
       );
       return;
     }
@@ -597,7 +597,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Xoa hoc ba thanh cong',
+        title: 'Xóa học bạ thành công',
         message: message,
       );
 
@@ -619,7 +619,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the xoa hoc ba. Vui long thu lai.',
+        message: 'Không thể xóa học bạ. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
@@ -714,7 +714,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Khong the tai hoc ba',
+              'Không thể tải học bạ',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 fontWeight: FontWeight.w800,
@@ -735,7 +735,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
               child: OutlinedButton.icon(
                 onPressed: _loadFullReportCard,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Thu lai'),
+                label: const Text('Thử lại'),
               ),
             ),
           ],

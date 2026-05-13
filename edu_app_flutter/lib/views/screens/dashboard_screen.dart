@@ -10,7 +10,9 @@ import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_feature_card.d
 import 'package:edu_app_flutter/views/widgets/dashboard/dashboard_section_header.dart';
 import 'package:edu_app_flutter/views/screens/chatbot_screen.dart';
 import 'package:edu_app_flutter/views/screens/pre_ocr_screen.dart';
+import 'package:edu_app_flutter/views/screens/profile_screen.dart';
 import 'package:edu_app_flutter/views/screens/study_report_screen.dart';
+import 'package:edu_app_flutter/views/screens/statistics_screen.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -104,6 +106,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ).push(MaterialPageRoute(builder: (_) => const StudyReportScreen()));
   }
 
+  void _openStatistics() {
+    Navigator.of(
+      context
+    ).push(MaterialPageRoute(builder: (_) => const StatisticsScreen()));
+  }
+
   void _openChatbot() {
     Navigator.of(
       context,
@@ -143,11 +151,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 accent: Color(0xFF06B6D4),
                 onTap: _openChatbot,
               ),
-              const DashboardFeatureCard(
+              DashboardFeatureCard(
                 icon: Icons.bar_chart_rounded,
                 title: 'Thống kê điểm',
                 subtitle: 'Trực quan hóa dữ liệu',
                 accent: Color(0xFF16A34A),
+                onTap: _openStatistics,
               ),
               DashboardFeatureCard(
                 icon: Icons.mark_email_read_rounded,
@@ -293,11 +302,22 @@ class _DashboardHeroHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  AppUserAvatar(
-                    avatar: avatar,
-                    size: 48,
-                    borderRadius: BorderRadius.circular(16),
-                    iconSize: 24,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                      ).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    child: AppUserAvatar(
+                      avatar: avatar,
+                      size: 48,
+                      borderRadius: BorderRadius.circular(16),
+                      iconSize: 24,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

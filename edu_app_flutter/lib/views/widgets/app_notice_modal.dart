@@ -12,8 +12,8 @@ class AppNoticeModal {
   static Future<void> showSuccess(
     BuildContext context, {
     required String message,
-    String title = 'Thanh cong',
-    String actionLabel = 'Dong',
+    String title = 'Thành công',
+    String actionLabel = 'Đóng',
     bool barrierDismissible = true,
     bool showAction = true,
     Duration? autoDismissDuration,
@@ -33,8 +33,8 @@ class AppNoticeModal {
   static Future<void> showError(
     BuildContext context, {
     required String message,
-    String title = 'Co loi xay ra',
-    String actionLabel = 'Thu lai',
+    String title = 'Có lỗi xảy ra',
+    String actionLabel = 'Thử lại',
     bool barrierDismissible = true,
     bool showAction = true,
     Duration? autoDismissDuration,
@@ -56,7 +56,7 @@ class AppNoticeModal {
     required AppNoticeType type,
     required String title,
     required String message,
-    String actionLabel = 'Da hieu',
+    String actionLabel = 'Đã hiểu',
     bool barrierDismissible = true,
     bool showAction = true,
     Duration? autoDismissDuration,

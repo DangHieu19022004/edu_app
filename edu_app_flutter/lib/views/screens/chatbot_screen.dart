@@ -90,7 +90,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget _buildHeader() {
     return OcrFlowHeader(
       title: 'Chatbot',
-      subtitle: 'Tro ly hoc tap AI',
+      subtitle: 'Trợ lý học tập AI',
       onBack: () {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
@@ -138,7 +138,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Chao ban, toi co the giup gi duoc cho ban?',
+                'Chào bạn, tôi có thể giúp gì cho bạn?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
@@ -149,7 +149,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Dat cau hoi ve ket qua hoc tap de AI phan tich va goi y cho ban.',
+                'Đặt câu hỏi về kết quả học tập để AI phân tích và gợi ý cho bạn.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: AppFontSizes.dashboardBody,

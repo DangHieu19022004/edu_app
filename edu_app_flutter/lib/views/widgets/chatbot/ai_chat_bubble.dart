@@ -7,7 +7,7 @@ class AiChatBubble extends StatelessWidget {
   const AiChatBubble({
     super.key,
     required this.message,
-    this.label = 'Tu van AI',
+    this.label = 'EduBot',
   });
 
   final String message;

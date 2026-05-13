@@ -3,7 +3,7 @@ class ApiConfig {
 
   static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.168.232:8000',
+    defaultValue: 'http://192.168.168.231:8000',
   );
 
   static const String apiPrefix = '/api';

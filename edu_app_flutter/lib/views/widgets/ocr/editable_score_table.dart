@@ -59,7 +59,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
   Widget build(BuildContext context) {
     if (_rows.isEmpty) {
       return const Text(
-        'Khong co dong diem OCR cho lop nay.',
+        'Không có dòng điểm OCR cho lớp này.',
         style: TextStyle(
           fontSize: AppFontSizes.dashboardCaption,
           color: AppColors.subtitle,
@@ -80,7 +80,7 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
             child: OutlinedButton.icon(
               onPressed: _addEmptyRow,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Them mon hoc'),
+              label: const Text('Thêm môn học'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
