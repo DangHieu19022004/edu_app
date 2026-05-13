@@ -2,7 +2,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import detect, save_full_report_card, get_full_report_card, update_report_card, delete_full_report_card, get_all_student_data
+from .views import (delete_full_report_card, detect, get_all_student_data,
+                    get_full_report_card, save_full_report_card,
+                    update_report_card)
 
 urlpatterns = [
     path('detect/', detect, name='detect'),
