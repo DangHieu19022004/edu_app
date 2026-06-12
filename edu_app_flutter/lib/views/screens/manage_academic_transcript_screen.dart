@@ -174,7 +174,7 @@ class _ListHbaScreenState extends State<ListHbaScreen> {
             ),
             alignment: Alignment.center,
             child: const Text(
-              'Chua co lop',
+              'Chưa có lớp',
               style: TextStyle(
                 fontSize: AppFontSizes.dashboardBody,
                 fontWeight: FontWeight.w600,

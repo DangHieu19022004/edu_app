@@ -5,9 +5,11 @@ import 'package:edu_app_flutter/services/auth_session.dart';
 import 'package:edu_app_flutter/services/auth_storage.dart';
 import 'package:edu_app_flutter/views/screens/splash_screen.dart';
 import 'package:edu_app_flutter/views/widgets/app_loading_overlay.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env', isOptional: true);
   await Firebase.initializeApp();
   AuthSession.instance.configureStorage(SecureAuthStorage());
   await AuthSession.instance.bootstrap();

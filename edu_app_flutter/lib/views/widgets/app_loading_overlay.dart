@@ -57,7 +57,6 @@ class _LoadingCard extends StatelessWidget {
       width: 150,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
@@ -71,20 +70,11 @@ class _LoadingCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: AppColors.primary,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'Dang xu ly...',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.label,
+              strokeWidth: 3.5,
+              color: Color.fromARGB(255, 217, 222, 248),
             ),
           ),
         ],

@@ -42,6 +42,7 @@ dependencies:
   flutter_facebook_auth: ^7.1.2
   flutter_secure_storage: ^10.0.0
   flutter_markdown: ^0.7.7+1
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,7 @@ flutter:
 
   assets:
     - lib/assets/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

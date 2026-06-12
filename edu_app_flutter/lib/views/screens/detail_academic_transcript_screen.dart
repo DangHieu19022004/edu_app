@@ -449,8 +449,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     if (reportCardId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Khong co hoc ba',
-        message: 'Khong tim thay report_card_id de cap nhat.',
+        title: 'Không có học bạ',
+        message: 'Không tìm thấy học bạ để cập nhật.',
       );
       return;
     }
@@ -460,8 +460,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     if (classId.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Thieu thong tin lop',
-        message: 'Khong tim thay class_id de cap nhat hoc ba.',
+        title: 'Thiếu thông tin lớp',
+        message: 'Không tìm thấy lớp để cập nhật học bạ',
       );
       return;
     }
@@ -469,8 +469,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     if (data.classList.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Thieu du lieu hoc ba',
-        message: 'Chua co classList de cap nhat hoc ba.',
+        title: 'Thiếu dữ liệu học bạ',
+        message: 'Chưa có dữ liệu học bạ',
       );
       return;
     }
@@ -479,8 +479,8 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     if (subjects.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Du lieu khong hop le',
-        message: 'Khong co mon hop le de cap nhat.',
+        title: 'Dữ liệu không hợp lệ',
+        message: 'Không có môn học hợp lệ để cập nhật.',
       );
       return;
     }
@@ -505,9 +505,9 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Cap nhat thanh cong',
+        title: 'Cập nhật thành công',
         message: response.message.isEmpty
-            ? 'Da cap nhat hoc ba thanh cong.'
+            ? 'Đã cập nhật học bạ thành công.'
             : response.message,
         showAction: false,
         autoDismissDuration: const Duration(milliseconds: 1200),
@@ -530,7 +530,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
       }
       await AppNoticeModal.showError(
         context,
-        message: 'Khong the cap nhat hoc ba. Vui long thu lai.',
+        message: 'Không thể cập nhật học bạ. Vui lòng thử lại.',
       );
     } finally {
       if (mounted) {
