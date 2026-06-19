@@ -75,15 +75,15 @@ class OcrService {
         } on SocketException {
           throw ApiException(
             message:
-                'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+                'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
           );
         } on TimeoutException {
           throw const ApiException(
             message:
-                'OCR dang xu ly anh lon nen can nhieu thoi gian. Da timeout sau 360 giay, vui long thu lai voi mang on dinh.',
+                'OCR đang xử lý ảnh lớn nên cần nhiều thời gian. Đã timeout sau 360 giây, vui lòng thử lại với mạng ổn định.',
           );
         } on http.ClientException catch (e) {
-          throw ApiException(message: 'Loi ket noi: ${e.message}');
+          throw ApiException(message: 'Lỗi kết nối: ${e.message}');
         }
       }
 
@@ -98,7 +98,7 @@ class OcrService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
         );
       }
 
@@ -121,14 +121,14 @@ class OcrService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối server bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -150,13 +150,13 @@ class OcrService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
         );
       }
 
       final trimmedStudentId = studentId.trim();
       if (trimmedStudentId.isEmpty) {
-        throw const ApiException(message: 'Khong tim thay student_id.');
+        throw const ApiException(message: 'Không tìm thấy student_id.');
       }
 
       final base = Uri.parse(
@@ -177,14 +177,14 @@ class OcrService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối server bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -204,7 +204,7 @@ class OcrService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
         );
       }
 
@@ -220,14 +220,14 @@ class OcrService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối server bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -246,7 +246,7 @@ class OcrService {
     final uid = (AuthSession.instance.uid ?? '').trim();
     if (uid.isEmpty) {
       throw const ApiException(
-        message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+        message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
       );
     }
 
@@ -262,14 +262,14 @@ class OcrService {
     } on SocketException {
       throw ApiException(
         message:
-            'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+            'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
       );
     } on TimeoutException {
       throw const ApiException(
-        message: 'Ket noi server bi timeout. Vui long thu lai.',
+        message: 'Kết nối server bị timeout. Vui lòng thử lại.',
       );
     } on http.ClientException catch (e) {
-      throw ApiException(message: 'Loi ket noi: ${e.message}');
+      throw ApiException(message: 'Lỗi kết nối: ${e.message}');
     }
 
     final bodyMap = _decodeJsonMap(response.body);
@@ -291,14 +291,14 @@ class OcrService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
         );
       }
 
       final trimmedReportCardId = reportCardId.trim();
       if (trimmedReportCardId.isEmpty) {
         throw const ApiException(
-          message: 'Khong tim thay id hoc ba can cap nhat.',
+          message: 'Không tìm thấy id học ba cần cập nhật.',
         );
       }
 
@@ -324,14 +324,14 @@ class OcrService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối server bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -351,13 +351,13 @@ class OcrService {
       final uid = (AuthSession.instance.uid ?? '').trim();
       if (uid.isEmpty) {
         throw const ApiException(
-          message: 'Phien dang nhap khong hop le. Vui long dang nhap lai.',
+          message: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
         );
       }
 
       final trimmedReportCardId = reportCardId.trim();
       if (trimmedReportCardId.isEmpty) {
-        throw const ApiException(message: 'Khong tim thay report_card_id.');
+        throw const ApiException(message: 'Không tìm thấy report_card_id.');
       }
 
       final base = Uri.parse(
@@ -375,14 +375,14 @@ class OcrService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới server ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối server bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       final bodyMap = _decodeJsonMap(response.body);
@@ -397,7 +397,7 @@ class OcrService {
       if (message is String && message.trim().isNotEmpty) {
         return message;
       }
-      return 'Xoa hoc ba thanh cong';
+      return 'Xóa học ba thành công';
     });
   }
 
@@ -430,6 +430,6 @@ class OcrService {
       return message;
     }
 
-    return 'Quet hoc ba that bai';
+    return 'Quét học ba thất bại. Vui lòng thử lại.';
   }
 }
