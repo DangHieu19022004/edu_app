@@ -100,7 +100,7 @@ def save_classroom(request):
             class_year = data.get('class_year')
 
             if not all([name, school_name, class_year]):
-                return JsonResponse({'error': 'Missing class information'}, status=400)
+                return JsonResponse({'error': 'Thiếu thông tin lớp học'}, status=400)
 
             # Tạo lớp mới
             new_class = Class.objects.create(
@@ -110,7 +110,7 @@ def save_classroom(request):
                 class_year=class_year  or ""
             )
 
-            return JsonResponse({'message': 'Class saved successfully', 'class_id': str(new_class.id)})
+            return JsonResponse({'message': 'Lưu lớp thành công', 'class_id': str(new_class.id)})
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
@@ -125,7 +125,7 @@ def get_classroom(request):
 def get_classrooms(request):
     teacher_id = request.GET.get('teacher_id')
     if not teacher_id:
-        return JsonResponse({'error': 'Missing teacher_id'}, status=400)
+        return JsonResponse({'error': 'Thiếu teacher_id'}, status=400)
 
     classrooms = Class.objects.filter(teacher_id=teacher_id)
     data = [
@@ -143,7 +143,7 @@ def get_classrooms(request):
 def get_students_by_class(request):
     class_id = request.GET.get('class_id')
     if not class_id:
-        return JsonResponse({'error': 'Missing class_id'}, status=400)
+        return JsonResponse({'error': 'Thiếu class_id'}, status=400)
 
     try:
         ReportCard, _, StudentInfo = _get_ocr_models()

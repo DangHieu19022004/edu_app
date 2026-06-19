@@ -1011,7 +1011,7 @@ def extract_student_info_from_base64(base64_image):
         - Giới tính
         - Ngày sinh
 
-        Trả về kết quả JSON với các trường: name, gender, dob
+        Trả về kết quả JSON tiếng việt với các trường: name, gender, dob
         """
 
         response = gemini_model.generate_content([
