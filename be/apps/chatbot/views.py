@@ -10,6 +10,8 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from apps.users.models import User
 
+from .rate_limit import check_chatbot_rate_limit
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMP_DIR = os.getenv('CHATBOT_TEMP_DIR', os.path.join(BASE_DIR, 'media', 'temp_files'))
 
@@ -105,6 +107,10 @@ def ask_chatbot(request):
 
         if User.objects.filter(uid=uid).first() is None:
             return JsonResponse({'error': 'Người dùng không tồn tại'}, status=404)
+
+        is_allowed, rate_limit_message, _retry_after = check_chatbot_rate_limit(uid)
+        if not is_allowed:
+            return JsonResponse({'error': rate_limit_message}, status=429)
 
         if not student_list:
             payload = {
