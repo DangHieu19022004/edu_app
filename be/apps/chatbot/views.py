@@ -97,6 +97,12 @@ def ask_chatbot(request):
         data = json.loads(request.body)
         question = data.get("question", "").strip()
         student_list = data.get("students", [])
+        requested_context_mode = data.get("context_mode", "").strip()
+        context_mode = (
+            "result_analysis"
+            if requested_context_mode == "result_analysis" or student_list
+            else "general"
+        )
         mapped_student_list = _map_subject_years_for_chatbot(student_list)
 
         # 🔐 Check token
@@ -108,7 +114,10 @@ def ask_chatbot(request):
         if User.objects.filter(uid=uid).first() is None:
             return JsonResponse({'error': 'Người dùng không tồn tại'}, status=404)
 
-        is_allowed, rate_limit_message, _retry_after = check_chatbot_rate_limit(uid)
+        is_allowed, rate_limit_message, _retry_after = check_chatbot_rate_limit(
+            uid,
+            context_mode=context_mode,
+        )
         if not is_allowed:
             return JsonResponse({'error': rate_limit_message}, status=429)
 

@@ -4,17 +4,20 @@ class ChatbotAskRequest {
   const ChatbotAskRequest({
     required this.question,
     required this.students,
+    required this.contextMode,
     this.conversationId,
   });
 
   final String question;
   final List<ChatbotStudentPayload> students;
+  final String contextMode;
   final String? conversationId;
 
   Map<String, dynamic> toJson() {
     return {
       'question': question,
       'students': students.map((item) => item.toJson()).toList(),
+      'context_mode': contextMode,
       if ((conversationId ?? '').trim().isNotEmpty)
         'conversation_id': conversationId!.trim(),
     };

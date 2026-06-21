@@ -20,6 +20,7 @@ class ChatbotService {
   Future<ChatbotAskResponse> askChatbot({
     required String question,
     List<OcrAllStudentDataItem> students = const <OcrAllStudentDataItem>[],
+    String contextMode = 'general',
     String? conversationId,
   }) async {
     final uid = (AuthSession.instance.uid ?? '').trim();
@@ -37,6 +38,7 @@ class ChatbotService {
     final request = ChatbotAskRequest(
       question: normalizedQuestion,
       students: students.map(ChatbotStudentPayload.fromOcrItem).toList(),
+      contextMode: contextMode,
       conversationId: conversationId,
     );
 
