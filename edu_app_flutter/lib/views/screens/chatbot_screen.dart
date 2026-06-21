@@ -30,15 +30,27 @@ class _ChatMessage {
 
 enum _MessageSender { ai, user }
 
+enum _ChatbotMode { generalConsultation, resultAnalysis }
+
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ChatbotService _chatbotService = ChatbotService();
   final OcrService _ocrService = OcrService();
-  final List<_ChatMessage> _messages = <_ChatMessage>[];
+  final Map<_ChatbotMode, List<_ChatMessage>> _messagesByMode =
+      <_ChatbotMode, List<_ChatMessage>>{
+        _ChatbotMode.generalConsultation: <_ChatMessage>[],
+        _ChatbotMode.resultAnalysis: <_ChatMessage>[],
+      };
   final ScrollController _scrollController = ScrollController();
-  bool _isSending = false;
   List<OcrAllStudentDataItem>? _cachedStudents;
-  String? _conversationId;
+  _ChatbotMode _activeMode = _ChatbotMode.generalConsultation;
+  _ChatbotMode? _sendingMode;
+
+  List<_ChatMessage> get _activeMessages => _messagesByMode[_activeMode]!;
+
+  bool get _isSending => _sendingMode != null;
+
+  bool get _isSendingActiveMode => _sendingMode == _activeMode;
 
   @override
   void dispose() {
@@ -60,14 +72,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           child: Column(
             children: [
               _buildHeader(),
+              _buildModeTabs(),
               Expanded(
-                child: _messages.isEmpty && !_isSending
+                child: _activeMessages.isEmpty && !_isSendingActiveMode
                     ? _buildEmptyStateDecor()
                     : ListView(
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                         children: [
-                          ..._messages.map(
+                          ..._activeMessages.map(
                             (message) => message.sender == _MessageSender.ai
                                 ? AiChatBubble(message: message.text)
                                 : UserChatBubble(
@@ -75,7 +88,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                                     avatar: userAvatar,
                                   ),
                           ),
-                          if (_isSending) const AiTypingIndicator(),
+                          if (_isSendingActiveMode) const AiTypingIndicator(),
                         ],
                       ),
               ),
@@ -100,6 +113,127 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       },
+    );
+  }
+
+  Widget _buildModeTabs() {
+    return Container(
+      color: AppColors.white,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildModeTab(
+                  mode: _ChatbotMode.generalConsultation,
+                  icon: Icons.lightbulb_outline_rounded,
+                  label: 'Tư vấn chung',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildModeTab(
+                  mode: _ChatbotMode.resultAnalysis,
+                  icon: Icons.insights_rounded,
+                  label: 'Phân tích kết quả',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: Container(
+              key: ValueKey<_ChatbotMode>(_activeMode),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F4FB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _activeMode == _ChatbotMode.generalConsultation
+                        ? Icons.chat_bubble_outline_rounded
+                        : Icons.school_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _activeMode == _ChatbotMode.generalConsultation
+                          ? 'Hỏi về phương pháp dạy học, soạn bài hoặc giao tiếp với phụ huynh. AI không nhận bảng điểm.'
+                          : 'Hỏi về điểm số, môn yếu hoặc gợi ý hỗ trợ học sinh. AI sẽ dùng dữ liệu kết quả học tập.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: AppColors.body,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeTab({
+    required _ChatbotMode mode,
+    required IconData icon,
+    required String label,
+  }) {
+    final isSelected = mode == _activeMode;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        if (isSelected) {
+          return;
+        }
+
+        _dismissKeyboard();
+        setState(() {
+          _activeMode = mode;
+        });
+        _scrollToBottom();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : const Color(0xFFF1F4FB),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? AppColors.white : AppColors.subtitle,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected ? AppColors.white : AppColors.label,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -274,20 +408,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       return;
     }
 
+    final sendingMode = _activeMode;
+    final messages = _messagesByMode[sendingMode]!;
+
     setState(() {
-      _messages.add(_ChatMessage(sender: _MessageSender.user, text: text));
+      messages.add(_ChatMessage(sender: _MessageSender.user, text: text));
       _messageController.clear();
-      _isSending = true;
+      _sendingMode = sendingMode;
     });
 
     _scrollToBottom();
 
     try {
-      final students = await _getStudentsForChatbot();
+      final students = sendingMode == _ChatbotMode.resultAnalysis
+          ? await _getStudentsForChatbot()
+          : const <OcrAllStudentDataItem>[];
       final response = await _chatbotService.askChatbot(
         question: text,
         students: students,
-        conversationId: _conversationId,
+        contextMode: sendingMode == _ChatbotMode.resultAnalysis
+            ? 'result_analysis'
+            : 'general',
       );
 
       final answer = response.answer.trim();
@@ -298,11 +439,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       setState(() {
         if (answer.isNotEmpty) {
-          _messages.add(_ChatMessage(sender: _MessageSender.ai, text: answer));
-        }
-        final conversationId = response.conversationId.trim();
-        if (conversationId.isNotEmpty) {
-          _conversationId = conversationId;
+          messages.add(_ChatMessage(sender: _MessageSender.ai, text: answer));
         }
       });
     } catch (e) {
@@ -315,7 +452,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
 
       setState(() {
-        _messages.add(_ChatMessage(sender: _MessageSender.ai, text: fallback));
+        messages.add(_ChatMessage(sender: _MessageSender.ai, text: fallback));
       });
     } finally {
       if (!mounted) {
@@ -323,7 +460,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
 
       setState(() {
-        _isSending = false;
+        _sendingMode = null;
       });
 
       _scrollToBottom();
