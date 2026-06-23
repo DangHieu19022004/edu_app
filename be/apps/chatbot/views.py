@@ -250,7 +250,7 @@ def ask_chatbot(request):
             })
         else:
             return JsonResponse({
-                'error': 'Lỗi từ Dify',
+                'error': 'Bạn đã vượt quá giới hạn số lần hỏi chatbot trong ngày. Vui lòng thử lại trong ít phút.',
                 'status': response.status_code,
                 'detail': response.text
             }, status=500)
