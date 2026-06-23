@@ -20,6 +20,29 @@ DIFY_UPLOAD_URL = os.getenv('DIFY_UPLOAD_URL')
 DIFY_API_KEY = os.getenv('DIFY_API_KEY')
 
 
+def _dify_error_response(response):
+    """Return a useful error without mislabelling every Dify failure as a quota error."""
+    status_code = response.status_code
+    if status_code == 429:
+        message = "Chatbot đang đạt giới hạn tạm thời. Vui lòng thử lại sau ít phút."
+    elif status_code in (401, 403):
+        message = "Cấu hình kết nối chatbot không hợp lệ. Vui lòng liên hệ quản trị viên."
+    elif status_code == 400:
+        message = "Dữ liệu gửi tới chatbot không hợp lệ hoặc tệp đính kèm không thể xử lý."
+    else:
+        message = "Chatbot không thể xử lý yêu cầu lúc này. Vui lòng thử lại sau."
+
+    print(f"Dify request failed ({status_code}): {response.text}")
+    return JsonResponse(
+        {
+            "error": message,
+            "status": status_code,
+            "detail": response.text,
+        },
+        status=status_code if 400 <= status_code < 600 else 502,
+    )
+
+
 def health_check(request):
     return JsonResponse({"module": "chatbot", "status": "ok"})
 
@@ -145,11 +168,7 @@ def ask_chatbot(request):
                     "metadata": result.get("metadata", {})
                 })
             else:
-                return JsonResponse({
-                    'error': 'Lỗi chatbot',
-                    'status': response.status_code,
-                    'detail': response.text
-                }, status=500)
+                return _dify_error_response(response)
 
         # ✅ Bước 1: Ghi file txt vào thư mục media/temp_files/
         os.makedirs(TEMP_DIR, exist_ok=True)
@@ -249,11 +268,7 @@ def ask_chatbot(request):
                 "metadata": result.get("metadata", {})
             })
         else:
-            return JsonResponse({
-                'error': 'Bạn đã vượt quá giới hạn số lần hỏi chatbot trong ngày. Vui lòng thử lại trong ít phút.',
-                'status': response.status_code,
-                'detail': response.text
-            }, status=500)
+            return _dify_error_response(response)
 
     except Exception as e:
         import traceback
