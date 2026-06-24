@@ -40,8 +40,6 @@ edu_app/
 
 ## Chạy dự án ở môi trường phát triển
 
-Mở hai terminal riêng để chạy Backend và Frontend.
-
 ### 1. Backend
 
 ```powershell
@@ -79,14 +77,10 @@ Cấu hình URL API trong `edu_app_flutter/.env` bằng biến `API_BASE_URL`, v
 API_BASE_URL=http://10.0.2.2:8000
 ```
 
-Với thiết bị thật, thay giá trị trên bằng IP nội bộ của máy đang chạy Backend. Có thể truyền URL khi chạy bằng `--dart-define=API_BASE_URL=...`.
-
 ## Cấu hình biến môi trường
 
 - `be/.env`: cấu hình Django, MongoDB, Firebase, email, Dify, Gemini và các dịch vụ Backend khác. Khởi tạo từ `be/.env.example`.
 - `edu_app_flutter/.env`: cấu hình `API_BASE_URL` cho ứng dụng Flutter.
-
-Không đưa file `.env`, khóa Firebase, API key hoặc thông tin đăng nhập lên Git/Drive công khai. Chỉ chia sẻ mẫu cấu hình đã loại bỏ dữ liệu nhạy cảm.
 
 ## Kiểm tra nhanh
 
@@ -100,14 +94,3 @@ cd edu_app_flutter
 flutter analyze
 flutter test
 ```
-
-## Lưu ý khi nén source để gửi
-
-Nên nén thư mục gốc `edu_app/`, nhưng loại trừ các thư mục/file sinh tự động hoặc chứa thông tin nhạy cảm:
-
-- `edu_app_flutter/build/`, `.dart_tool/`
-- `be/venv/`, `__pycache__/`, `staticfiles/`, `media/`, `db.sqlite3`
-- `.env`, Firebase service-account JSON, API key và các file secret khác
-- `.git/` nếu người nhận chỉ cần source code, không cần lịch sử Git
-
-Những thư mục này có thể được tạo lại bằng các bước cài đặt ở trên, giúp file `.zip` nhẹ và an toàn hơn.
