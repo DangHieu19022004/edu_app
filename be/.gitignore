@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+DATABASE_SCHEMA_DIAGRAM.md
+DATABASE_SETUP.md
+REBUILD_WITH_MONGOENGINE_TASKS.md
+eduteacher-19063-firebase-adminsdk-fbsvc-4a469228b4.json
+API_FRONTEND_INTEGRATION.md
+eduapp-437c1-firebase-adminsdk-fbsvc-b4a9afb46d.json
+eduapp-437c1-firebase-adminsdk-fbsvc-7910212bcb.json
+checkpoint-110/
+cropped/
+temp/
+apps/media/
