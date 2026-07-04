@@ -165,8 +165,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   Expanded(
                     child: Text(
                       _activeMode == _ChatbotMode.generalConsultation
-                          ? 'Hỏi về phương pháp dạy học, soạn bài hoặc giao tiếp với phụ huynh. AI không nhận bảng điểm.'
-                          : 'Hỏi về điểm số, môn yếu hoặc gợi ý hỗ trợ học sinh. AI sẽ dùng dữ liệu kết quả học tập.',
+                          ? 'Hỏi về phương pháp dạy học, soạn bài - Chế độ tiết kiệm'
+                          : 'Hỏi về điểm số, gợi ý hỗ trợ học sinh - Chế độ phân tích',
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.35,

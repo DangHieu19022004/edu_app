@@ -93,7 +93,7 @@ class _OcrScreenState extends State<OcrScreen>
     if (widget.imageInputs.isEmpty) {
       setState(() {
         _isDetecting = false;
-        _detectError = 'Khong co anh de quet.';
+        _detectError = 'Không có ảnh để quét.';
       });
       _syncScanAnimation();
       return;
@@ -132,7 +132,7 @@ class _OcrScreenState extends State<OcrScreen>
       if (!mounted) return;
       setState(() {
         _isDetecting = false;
-        _detectError = 'Quet hoc ba that bai. Vui long thu lai.';
+        _detectError = 'Quét học bạ thất bại. Vui lòng thử lại.';
       });
       _syncScanAnimation();
     }
@@ -163,7 +163,7 @@ class _OcrScreenState extends State<OcrScreen>
       if (!mounted) return;
       setState(() {
         _isLoadingClassrooms = false;
-        _classroomError = 'Khong tai duoc danh sach lop. Vui long thu lai.';
+        _classroomError = 'Không tải được danh sách lớp. Vui lòng thử lại.';
       });
     }
   }
@@ -225,7 +225,7 @@ class _OcrScreenState extends State<OcrScreen>
 
   void _logOcrData(List<OcrDetectResult> results) {
     if (results.isEmpty) {
-      debugPrint('[OCR][detect] Khong co result nao tu backend.');
+      debugPrint('Không có kết quả.');
       return;
     }
 
@@ -332,8 +332,8 @@ class _OcrScreenState extends State<OcrScreen>
     if (selectedClassroom == null) {
       await AppNoticeModal.showError(
         context,
-        title: 'Thieu thong tin',
-        message: 'Vui long chon lop truoc khi luu hoc ba.',
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng chọn lớp trước khi lưu học bạ.',
       );
       return;
     }
@@ -342,8 +342,8 @@ class _OcrScreenState extends State<OcrScreen>
     if (studentName.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Thieu thong tin',
-        message: 'Vui long nhap ten hoc sinh.',
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng nhập tên học sinh.',
       );
       return;
     }
@@ -352,8 +352,8 @@ class _OcrScreenState extends State<OcrScreen>
     if (subjects.isEmpty) {
       await AppNoticeModal.showError(
         context,
-        title: 'Du lieu khong hop le',
-        message: 'Khong co mon hop le de luu. Can it nhat HK1 hoac HK2.',
+        title: 'Dữ liệu không hợp lệ',
+        message: 'Cần ít nhất điểm HK1 hoặc HK2.',
       );
       return;
     }
@@ -376,9 +376,9 @@ class _OcrScreenState extends State<OcrScreen>
 
       await AppNoticeModal.showSuccess(
         context,
-        title: 'Luu thanh cong',
+        title: 'Lưu thành công',
         message: response.message.isEmpty
-            ? 'Luu hoc ba thanh cong.'
+            ? 'Lưu học bạ thành công.'
             : response.message,
         showAction: false,
         autoDismissDuration: const Duration(milliseconds: 1400),
@@ -402,7 +402,7 @@ class _OcrScreenState extends State<OcrScreen>
       if (!mounted) return;
       await AppNoticeModal.showError(
         context,
-        message: 'Luu hoc ba that bai. Vui long thu lai.',
+        message: 'Lưu học bạ thất bại. Vui lòng thử lại.',
       );
     } finally {
       if (!mounted) return;

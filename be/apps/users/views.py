@@ -395,7 +395,7 @@ def facebook_login(request):
         token_pair = _issue_token_pair(user)
 
         return Response({
-            "message": "Facebook user authenticated successfully",
+            "message": "Đăng nhập thành công",
             **token_pair,
             "user": {
                 "uid": user.uid,
@@ -440,7 +440,7 @@ def google_login(request):
         token_pair = _issue_token_pair(user)
 
         return Response({
-            "message": "User authenticated successfully",
+            "message": "Đăng nhập thành công",
             **token_pair,
             "user": _build_user_payload(user),
         }, status=200)

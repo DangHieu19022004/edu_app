@@ -88,14 +88,14 @@ class ClassroomService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới máy chủ ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối máy chủ bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -153,14 +153,14 @@ class ClassroomService {
       } on SocketException {
         throw ApiException(
           message:
-              'Khong the ket noi toi server ($uri). Hay kiem tra backend va mang.',
+              'Không thể kết nối tới máy chủ ($uri). Hãy kiểm tra lại mạng.',
         );
       } on TimeoutException {
         throw const ApiException(
-          message: 'Ket noi server bi timeout. Vui long thu lai.',
+          message: 'Kết nối máy chủ bị timeout. Vui lòng thử lại.',
         );
       } on http.ClientException catch (e) {
-        throw ApiException(message: 'Loi ket noi: ${e.message}');
+        throw ApiException(message: 'Lỗi kết nối: ${e.message}');
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {

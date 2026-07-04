@@ -25,7 +25,7 @@ class GoogleAuthService {
       final idToken = googleAuth.idToken;
 
       if (idToken == null || idToken.isEmpty) {
-        throw const ApiException(message: 'Khong lay duoc Google ID token.');
+        throw const ApiException(message: 'Không lấy được Google ID token.');
       }
 
       final credential = GoogleAuthProvider.credential(
@@ -41,27 +41,27 @@ class GoogleAuthService {
 
       if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
         throw const ApiException(
-          message: 'Khong lay duoc Firebase ID token tu tai khoan Google.',
+          message: 'Không lấy được Firebase ID token từ tài khoản Google.',
         );
       }
 
       return firebaseIdToken;
     } on FirebaseException catch (e) {
       throw ApiException(
-        message: e.message ?? 'Loi Firebase. Vui long kiem tra cau hinh.',
+        message: e.message ?? 'Có lỗi trong quá trình xác thực. Vui lòng kiểm tra cấu hình.',
       );
     } on FirebaseAuthException catch (e) {
       throw ApiException(
-        message: e.message ?? 'Xac thuc Google that bai. Vui long thu lai.',
+        message: e.message ?? 'Xác thực Google thất bại. Vui lòng thử lại.',
       );
     } on PlatformException catch (e) {
       throw ApiException(
-        message: e.message ?? 'Google Sign-In bi loi nen tang.',
+        message: e.message ?? 'Google Sign-In bị lỗi nền tảng.',
       );
     } catch (e) {
       throw ApiException(
         message:
-            'Google Sign-In that bai. Chi tiet: ${e.toString()}',
+            'Google Sign-In thất bại. Chi tiết: ${e.toString()}',
       );
     }
   }
