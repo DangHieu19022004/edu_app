@@ -23,6 +23,20 @@ def _get_student_info_model():
 
     return StudentInfo
 
+
+def _normalize_scheduled_datetime(raw_value):
+    parsed_value = parse_datetime(raw_value)
+    if parsed_value is None:
+        return None
+
+    if timezone.is_naive(parsed_value):
+        return timezone.make_aware(
+            parsed_value,
+            timezone.get_current_timezone(),
+        )
+
+    return parsed_value
+
 @api_view(['GET'])
 def get_template(request):
     return "hello"
@@ -67,7 +81,7 @@ def update_email_schedule(request):
         if message:
             email.message = message
         if scheduled_date:
-            parsed_scheduled_date = parse_datetime(scheduled_date)
+            parsed_scheduled_date = _normalize_scheduled_datetime(scheduled_date)
             if parsed_scheduled_date is None:
                 return Response({'error': 'scheduled_date không đúng định dạng ISO 8601'}, status=400)
             email.scheduled_date = parsed_scheduled_date
@@ -158,7 +172,7 @@ def schedule_email(request):
         if not all([subject, recipient, message, scheduled_time, teacher_id]):
             return Response({'error': 'Thiếu dữ liệu'}, status=400)
 
-        parsed_scheduled_time = parse_datetime(scheduled_time)
+        parsed_scheduled_time = _normalize_scheduled_datetime(scheduled_time)
         if parsed_scheduled_time is None:
             return Response({'error': 'scheduled_time không đúng định dạng ISO 8601'}, status=400)
 
