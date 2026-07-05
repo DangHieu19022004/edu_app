@@ -3,8 +3,11 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
-import 'package:edu_app_flutter/controllers/login_controller.dart';
+import 'package:edu_app_flutter/models/facebook_login_models.dart';
+import 'package:edu_app_flutter/models/form_login_models.dart';
+import 'package:edu_app_flutter/models/google_login_models.dart';
 import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/auth_service.dart';
 import 'package:edu_app_flutter/services/facebook_auth_service.dart';
 import 'package:edu_app_flutter/services/google_auth_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
@@ -93,7 +96,7 @@ class _LoginCard extends StatefulWidget {
 }
 
 class _LoginCardState extends State<_LoginCard> {
-  final LoginController _loginController = LoginController();
+  final _LoginController _loginController = _LoginController();
   final GoogleAuthService _googleAuthService = GoogleAuthService();
   final FacebookAuthService _facebookAuthService = FacebookAuthService();
   final TextEditingController _emailController = TextEditingController();
@@ -112,7 +115,7 @@ class _LoginCardState extends State<_LoginCard> {
       return;
     }
 
-    if (_loginController.status == LoginStatus.error &&
+    if (_loginController.status == _LoginStatus.error &&
         _loginController.errorMessage != null) {
       await AppNoticeModal.showError(
         context,
@@ -122,7 +125,7 @@ class _LoginCardState extends State<_LoginCard> {
       return;
     }
 
-    if (_loginController.status == LoginStatus.success) {
+    if (_loginController.status == _LoginStatus.success) {
       final successMessage =
           _loginController.response?.message.isNotEmpty == true
           ? _loginController.response!.message
@@ -671,5 +674,143 @@ class _FooterLinks extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+enum _LoginStatus {
+  idle,
+  loading,
+  success,
+  error,
+}
+
+class _LoginController extends ChangeNotifier {
+  _LoginController({AuthService? authService})
+    : _authService = authService ?? AuthService();
+
+  final AuthService _authService;
+
+  _LoginStatus _status = _LoginStatus.idle;
+  String? _errorMessage;
+  FormLoginResponse? _response;
+  GoogleLoginResponse? _googleResponse;
+  FacebookLoginResponse? _facebookResponse;
+
+  _LoginStatus get status => _status;
+  bool get isLoading => _status == _LoginStatus.loading;
+  String? get errorMessage => _errorMessage;
+  FormLoginResponse? get response => _response;
+  GoogleLoginResponse? get googleResponse => _googleResponse;
+  FacebookLoginResponse? get facebookResponse => _facebookResponse;
+
+  Future<FormLoginResponse?> login({
+    required String emailOrPhone,
+    required String password,
+  }) async {
+    _status = _LoginStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = FormLoginRequest(
+        emailOrPhone: emailOrPhone.trim(),
+        password: password,
+      );
+
+      final loginResponse = await _authService.loginByForm(request);
+
+      _response = loginResponse;
+      _googleResponse = null;
+      _facebookResponse = null;
+      _status = _LoginStatus.success;
+      notifyListeners();
+      return loginResponse;
+    } on ApiException catch (e) {
+      _status = _LoginStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _status = _LoginStatus.error;
+      _errorMessage = AppTexts.loginError;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<GoogleLoginResponse?> loginWithGoogleToken({
+    required String token,
+  }) async {
+    _status = _LoginStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = GoogleLoginRequest(token: token.trim());
+      final loginResponse = await _authService.loginByGoogleToken(request);
+
+      _googleResponse = loginResponse;
+      _response = null;
+      _facebookResponse = null;
+      _status = _LoginStatus.success;
+      notifyListeners();
+      return loginResponse;
+    } on ApiException catch (e) {
+      _status = _LoginStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _status = _LoginStatus.error;
+      _errorMessage = AppTexts.loginError;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<FacebookLoginResponse?> loginWithFacebookProfile({
+    required String uid,
+    required String displayName,
+    required String photoUrl,
+  }) async {
+    _status = _LoginStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = FacebookLoginRequest(
+        uid: uid.trim(),
+        displayName: displayName.trim(),
+        photoUrl: photoUrl.trim(),
+      );
+
+      final loginResponse = await _authService.loginByFacebookProfile(request);
+
+      _facebookResponse = loginResponse;
+      _response = null;
+      _googleResponse = null;
+      _status = _LoginStatus.success;
+      notifyListeners();
+      return loginResponse;
+    } on ApiException catch (e) {
+      _status = _LoginStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _status = _LoginStatus.error;
+      _errorMessage = AppTexts.loginError;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  void resetState() {
+    _status = _LoginStatus.idle;
+    _errorMessage = null;
+    _response = null;
+    _googleResponse = null;
+    _facebookResponse = null;
+    notifyListeners();
   }
 }

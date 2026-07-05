@@ -56,6 +56,20 @@ python manage.py runserver
 
 API sẽ chạy tại: http://127.0.0.1:8000/
 
+## Tu dong gui email lap lich tren Windows
+
+Email `pending` khong tu chay theo `runserver`. Hay dung Windows Task Scheduler de chay dinh ky file:
+
+```text
+D:\edu_app\be\scripts\run_send_pending_emails.bat
+```
+
+Goi y cau hinh:
+- Trigger: lap lai moi `1 minute`
+- Action: `Start a program`
+- Program/script: `edu_app\be\scripts\run_send_pending_emails.bat`
+- Start in: `edu_app\be\scripts`
+
 ## API Endpoints
 
 - Admin Panel: http://127.0.0.1:8000/admin/

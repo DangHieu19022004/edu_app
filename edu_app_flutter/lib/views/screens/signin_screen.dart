@@ -3,7 +3,9 @@ import 'package:edu_app_flutter/constants/app_colors.dart';
 import 'package:edu_app_flutter/constants/app_spacing.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
-import 'package:edu_app_flutter/controllers/register_controller.dart';
+import 'package:edu_app_flutter/models/form_register_models.dart';
+import 'package:edu_app_flutter/services/api_exception.dart';
+import 'package:edu_app_flutter/services/auth_service.dart';
 import 'package:edu_app_flutter/views/screens/dashboard_screen.dart';
 import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 
@@ -15,7 +17,7 @@ class SigninScreen extends StatefulWidget {
 }
 
 class _SigninScreenState extends State<SigninScreen> {
-  final RegisterController _registerController = RegisterController();
+  final _RegisterController _registerController = _RegisterController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -33,7 +35,7 @@ class _SigninScreenState extends State<SigninScreen> {
       return;
     }
 
-    if (_registerController.status == RegisterStatus.error &&
+    if (_registerController.status == _RegisterStatus.error &&
         _registerController.errorMessage != null) {
       await AppNoticeModal.showError(
         context,
@@ -41,7 +43,7 @@ class _SigninScreenState extends State<SigninScreen> {
       );
     }
 
-    if (_registerController.status == RegisterStatus.success) {
+    if (_registerController.status == _RegisterStatus.success) {
       await AppNoticeModal.showSuccess(
         context,
         message: 'Tạo tài khoản thành công',
@@ -547,5 +549,72 @@ class _DividerLabel extends StatelessWidget {
         const Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
       ],
     );
+  }
+}
+
+enum _RegisterStatus {
+  idle,
+  loading,
+  success,
+  error,
+}
+
+class _RegisterController extends ChangeNotifier {
+  _RegisterController({AuthService? authService})
+    : _authService = authService ?? AuthService();
+
+  final AuthService _authService;
+
+  _RegisterStatus _status = _RegisterStatus.idle;
+  String? _errorMessage;
+  FormRegisterResponse? _response;
+
+  _RegisterStatus get status => _status;
+  bool get isLoading => _status == _RegisterStatus.loading;
+  String? get errorMessage => _errorMessage;
+  FormRegisterResponse? get response => _response;
+
+  Future<FormRegisterResponse?> register({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    _status = _RegisterStatus.loading;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = FormRegisterRequest(
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password: password,
+      );
+
+      final registerResponse = await _authService.registerByForm(request);
+
+      _response = registerResponse;
+      _status = _RegisterStatus.success;
+      notifyListeners();
+      return registerResponse;
+    } on ApiException catch (e) {
+      _status = _RegisterStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _status = _RegisterStatus.error;
+      _errorMessage = AppTexts.loginError;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  void resetState() {
+    _status = _RegisterStatus.idle;
+    _errorMessage = null;
+    _response = null;
+    notifyListeners();
   }
 }

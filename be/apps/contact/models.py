@@ -31,7 +31,7 @@ class EmailSchedule(Document):
     scheduled_date = DateTimeField(required=True)
     status = StringField(
         max_length=20,
-        choices=[('pending', 'Pending'), ('sending', 'Sending'), ('sent', 'Sent')],
+        choices=[('pending', 'Pending'), ('sent', 'Sent')],
         default='pending'
     )
 

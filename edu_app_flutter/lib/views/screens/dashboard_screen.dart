@@ -64,36 +64,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Widget _buildQuickActions() {
-  //   return Padding(
-  //     padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-  //     child: SingleChildScrollView(
-  //       scrollDirection: Axis.horizontal,
-  //       child: Row(
-  //         children: const [
-  //           DashboardQuickActionChip(
-  //             icon: Icons.person_add_alt_1_rounded,
-  //             title: 'Thêm phụ huynh',
-  //             iconColor: AppColors.primary,
-  //           ),
-  //           SizedBox(width: 8),
-  //           DashboardQuickActionChip(
-  //             icon: Icons.history_rounded,
-  //             title: 'Lịch sử email',
-  //             iconColor: Color(0xFF8B5CF6),
-  //           ),
-  //           SizedBox(width: 8),
-  //           DashboardQuickActionChip(
-  //             icon: Icons.ios_share_rounded,
-  //             title: 'Xuất báo cáo',
-  //             iconColor: Color(0xFF14B8A6),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   void _openPreOcr() {
     Navigator.of(
       context,
