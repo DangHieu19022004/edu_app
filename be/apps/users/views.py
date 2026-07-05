@@ -395,7 +395,7 @@ def facebook_login(request):
         token_pair = _issue_token_pair(user)
 
         return Response({
-            "message": "Facebook user authenticated successfully",
+            "message": "Xác thực Facebook thành công",
             **token_pair,
             "user": {
                 "uid": user.uid,
@@ -440,7 +440,7 @@ def google_login(request):
         token_pair = _issue_token_pair(user)
 
         return Response({
-            "message": "User authenticated successfully",
+            "message": "Xác thực Google thành công",
             **token_pair,
             "user": _build_user_payload(user),
         }, status=200)
@@ -540,7 +540,7 @@ def verify_token(request):
                 decoded_token = decode_token(token, expected_type="access")
                 user = User.objects.get(uid=decoded_token["user_id"])
                 return Response({
-                    "message": "Google User authenticated",
+                    "message": "Xác thực Google thành công",
                     "user": _build_user_payload(user),
                 })
             except jwt.ExpiredSignatureError:
@@ -554,7 +554,7 @@ def verify_token(request):
                 decoded_token = decode_token(fb_uid, expected_type="access")
                 user = User.objects.get(uid=decoded_token["user_id"])
                 return Response({
-                    "message": "Facebook User authenticated",
+                    "message": "Xác thực Facebook thành công",
                     "user": _build_user_payload(user),
                 })
             except jwt.ExpiredSignatureError:
