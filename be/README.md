@@ -58,17 +58,31 @@ API sẽ chạy tại: http://127.0.0.1:8000/
 
 ## Tu dong gui email lap lich tren Windows
 
-Email `pending` khong tu chay theo `runserver`. Hay dung Windows Task Scheduler de chay dinh ky file:
+Email pending khong tu chay theo runserver neu ban chi chay lenh Python thu cong.
 
-```text
-D:\edu_app\be\scripts\run_send_pending_emails.bat
+Du an da co san 2 script cho server Windows:
+
+- `D:\edu_app\be\scripts\start_server.bat`
+	- Tu dong tao Scheduled Task gui email moi 1 phut khi server start
+	- Chay Django runserver bang dung venv cua du an
+	- Tu dong xoa Scheduled Task khi server dung
+- `D:\edu_app\be\scripts\run_send_pending_emails.bat`
+	- `install-task`: tao/cap nhat Scheduled Task `EduApp_SendPendingEmails`
+	- `remove-task`: xoa Scheduled Task
+	- `run`: chay gui email 1 lan
+
+Lenh van hanh khuyen nghi:
+
+```bat
+D:\edu_app\be\scripts\start_server.bat
 ```
 
-Goi y cau hinh:
-- Trigger: lap lai moi `1 minute`
-- Action: `Start a program`
-- Program/script: `edu_app\be\scripts\run_send_pending_emails.bat`
-- Start in: `edu_app\be\scripts`
+Neu can thao tac thu cong:
+
+```bat
+D:\edu_app\be\scripts\run_send_pending_emails.bat install-task
+D:\edu_app\be\scripts\run_send_pending_emails.bat remove-task
+```
 
 ## API Endpoints
 
