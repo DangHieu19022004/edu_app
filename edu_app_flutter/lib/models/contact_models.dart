@@ -67,17 +67,20 @@ class SendEmailNowRequest {
     required this.subject,
     required this.recipient,
     required this.message,
+    required this.teacherId,
   });
 
   final String subject;
   final String recipient;
   final String message;
+  final String teacherId;
 
   Map<String, dynamic> toJson() {
     return {
       'subject': subject,
       'recipient': recipient,
       'message': message,
+      'teacher_id': teacherId,
     };
   }
 }

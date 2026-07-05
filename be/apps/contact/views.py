@@ -7,6 +7,7 @@ from apps.classroom.models import Class
 from django.core.mail import send_mail
 import uuid
 from django.utils.dateparse import parse_datetime
+from django.utils import timezone
 
 
 @api_view(['GET'])
@@ -106,8 +107,9 @@ def send_email_now(request):
         subject = request.data.get('subject')
         recipient = request.data.get('recipient')
         message = request.data.get('message')
+        teacher_id = request.data.get('teacher_id')
 
-        if not all([subject, recipient, message]):
+        if not all([subject, recipient, message, teacher_id]):
             return Response({'error': 'Thiếu dữ liệu'}, status=400)
 
         send_mail(
@@ -118,17 +120,26 @@ def send_email_now(request):
             fail_silently=False,
         )
 
-        try:
-            email = EmailSchedule.objects.get(
+        email = EmailSchedule.objects(
+            subject=subject,
+            recipients=recipient,
+            message=message,
+            teacher_id=teacher_id,
+            status='pending'
+        ).first()
+
+        if email:
+            email.status = 'sent'
+            email.save()
+        else:
+            EmailSchedule.objects.create(
                 subject=subject,
                 recipients=recipient,
                 message=message,
-                status='pending'
+                scheduled_date=timezone.now(),
+                status='sent',
+                teacher_id=teacher_id,
             )
-            email.status = 'sent'
-            email.save()
-        except EmailSchedule.DoesNotExist:
-            pass
 
         return Response({'message': 'Đã gửi email thành công'})
     except Exception as e:

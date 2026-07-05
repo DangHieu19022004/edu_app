@@ -562,6 +562,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
               subject: subject,
               recipient: recipient,
               message: message,
+              teacherId: teacherId,
             ),
           );
           successCount += 1;
@@ -574,6 +575,13 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
       if (!mounted) {
         return;
+      }
+
+      if (successCount > 0) {
+        await _loadHistory();
+        if (!mounted) {
+          return;
+        }
       }
 
       if (successCount == 0) {
