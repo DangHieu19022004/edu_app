@@ -110,7 +110,7 @@ def save_classroom(request):
                 class_year=class_year  or ""
             )
 
-            return JsonResponse({'message': 'Class saved successfully', 'class_id': str(new_class.id)})
+            return JsonResponse({'message': 'Lưu lớp thành công', 'class_id': str(new_class.id)})
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
