@@ -783,19 +783,19 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     return [
       'Mẫu nội dung sẽ gửi cho từng phụ huynh:',
       '',
-      'Kinh gửi Quý phụ huynh [TEN PHU HUYNH],',
+      'Kính gửi Quý phụ huynh [TEN PHU HUYNH],',
       '',
       'Nhà trường gửi thông tin học tập của học sinh [TEN HOC SINH]:',
-      '- Lop: [TEN LOP]',
-      '- Truong: [TEN TRUONG]',
-      '- Gioi tinh: [GIOI TINH]',
-      '- Ngay sinh: [NGAY SINH]',
-      '- So dien thoai: [SO DIEN THOAI]',
+      '- Lớp: [TEN LOP]',
+      '- Trường: [TEN TRUONG]',
+      '- Giới tính: [GIOI TINH]',
+      '- Ngày sinh: [NGAY SINH]',
+      '- Số điện thoại: [SO DIEN THOAI]',
       '',
       'Bảng điểm:',
-      '- [NAM HOC] [MON]: HK1 ..., HK2 ..., Ca nam ...',
+      '- [NAM HOC] [MON]: HK1 ..., HK2 ..., Cả năm ...',
       '',
-      'Quy phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
+      'Quý phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
       'Trân trọng.',
     ].join('\n');
   }
@@ -814,7 +814,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
     final phone = student?.phone.trim() ?? '';
 
     return [
-      'Kinh gửi Quý phụ huynh ${parent.parentName.trim().isEmpty ? '' : parent.parentName.trim()},',
+      'Kính gửi Quý phụ huynh ${parent.parentName.trim().isEmpty ? '' : parent.parentName.trim()},',
       '',
       'Nhà trường gửi thông tin học sinh như sau:',
       '- Họ tên học sinh: $studentName',
@@ -827,7 +827,7 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
       'Bảng điểm:',
       scoreSummary,
       '',
-      'Quy phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
+      'Quý phụ huynh vui lòng theo dõi và phối hợp cùng giáo viên chủ nhiệm.',
       'Trân trọng.',
     ].join('\n');
   }
@@ -883,10 +883,10 @@ class _StudyReportScreenState extends State<StudyReportScreen> {
 
           for (final subject in subjects) {
             final subjectName = subject.name.trim().isEmpty
-                ? 'Mon hoc'
+                ? 'Môn học'
                 : subject.name.trim();
             lines.add(
-              '  - $subjectName: HK1 ${_displayScore(subject.hk1)} | HK2 ${_displayScore(subject.hk2)} | Ca nam ${_displayScore(subject.cn)}',
+              '  - $subjectName: HK1 ${_displayScore(subject.hk1)} | HK2 ${_displayScore(subject.hk2)} | Cả năm ${_displayScore(subject.cn)}',
             );
           }
         }

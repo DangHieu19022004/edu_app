@@ -138,7 +138,7 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
         return;
       }
       setState(() {
-        _errorMessage = 'Khong tai duoc chi tiet hoc ba. Vui long thu lai.';
+        _errorMessage = 'Không tải được chi tiết học bạ. Vui lòng thử lại.';
         _isLoading = false;
       });
     }

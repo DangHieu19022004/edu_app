@@ -108,7 +108,7 @@ class AuthService {
       }
       if (response.statusCode == 401) {
         throw ApiException(
-          message: 'Sai thong tin dang nhap. Vui long kiem tra lai email/so dien thoai va mat khau.',
+          message: 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.',
           statusCode: response.statusCode,
         );
       }
