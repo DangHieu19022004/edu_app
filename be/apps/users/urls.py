@@ -1,5 +1,17 @@
 from django.urls import path
-from .views import google_login, verify_token, facebook_login, form_login, form_register, send_otp, verify_otp, change_password, refresh_token
+from .views import (
+    change_password,
+    delete_user,
+    facebook_login,
+    form_login,
+    form_register,
+    google_login,
+    list_users,
+    refresh_token,
+    send_otp,
+    verify_otp,
+    verify_token,
+)
 
 urlpatterns = [
     path('googlelogin/', google_login, name='google_login'),
@@ -11,4 +23,6 @@ urlpatterns = [
     path("verify-otp/", verify_otp, name="verify_otp"),
     path("change-password/", change_password, name="change_password"),
     path("refresh-token/", refresh_token, name="refresh_token"),
+    path("list-users/", list_users, name="list_users"),
+    path("delete-user/", delete_user, name="delete_user"),
 ]

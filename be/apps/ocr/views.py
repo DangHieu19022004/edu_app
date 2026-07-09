@@ -84,6 +84,94 @@ def _upsert_student_info(student_id, defaults):
     student.save()
     return student, created
 
+#chuyển score sang float, nếu không hợp lệ thì trả về None
+def _parse_score(value):
+    if value is None:
+        return None
+
+    normalized = str(value).strip().replace(",", ".")
+    if not normalized:
+        return None
+
+    try:
+        score = float(normalized)
+    except (TypeError, ValueError):
+        return None
+
+    if score < 0 or score > 10:
+        return None
+    return score
+
+#chuyển score sang int nếu là số nguyên, hoặc float nếu có phần thập phân
+def _format_score(value):
+    if value is None:
+        return 0
+    rounded = round(value, 1)
+    return int(rounded) if rounded.is_integer() else rounded
+
+#chuyển GPA sang xếp loại học lực
+def _academic_performance_from_gpa(gpa):
+    if gpa is None or gpa <= 0:
+        return ""
+    if gpa >= 8:
+        return "Giỏi"
+    if gpa >= 6.5:
+        return "Khá"
+    if gpa >= 5:
+        return "Trung bình"
+    return "Yếu"
+
+# tính điểm cuối năm của môn học, ưu tiên final_score, nếu không có thì lấy trung bình 2 học kỳ
+def _subject_final_score(subject, year):
+    final_score = _parse_score(_subject_value(subject, f"year{year}_final_score"))
+    if final_score is not None:
+        return final_score
+
+    sem1_score = _parse_score(_subject_value(subject, f"year{year}_sem1_score"))
+    sem2_score = _parse_score(_subject_value(subject, f"year{year}_sem2_score"))
+    if sem1_score is not None and sem2_score is not None:
+        return (sem1_score + sem2_score) / 2
+
+    return sem1_score if sem1_score is not None else sem2_score
+
+# Tính toán GPA trung bình và xếp loại học lực cho từng năm học dựa trên danh sách môn học
+def _computed_report_card_defaults(subjects):
+    defaults = {}
+
+    for year in (1, 2, 3):
+        summary_score = None
+        scores = []
+
+        for subject in subjects or []:
+            subject_year = _subject_value(subject, "year")
+            try:
+                subject_year = int(subject_year)
+            except (TypeError, ValueError):
+                continue
+
+            if subject_year != year:
+                continue
+
+            name = str(_subject_value(subject, "name", "") or "").strip().lower()
+            final_score = _subject_final_score(subject, year)
+            if final_score is None:
+                continue
+
+            if "dtb" in name or "trung bình" in name or "cac mon" in name or "các môn" in name:
+                summary_score = final_score
+                continue
+
+            scores.append(final_score)
+
+        gpa = summary_score
+        if gpa is None and scores:
+            gpa = sum(scores) / len(scores)
+
+        defaults[f"gpa_avg_year{year}"] = _format_score(gpa)
+        defaults[f"academic_perform_year{year}"] = _academic_performance_from_gpa(gpa)
+
+    return defaults
+
 
 @csrf_exempt
 @require_http_methods(["GET"])
@@ -240,7 +328,18 @@ def update_report_card(request):
         except Class.DoesNotExist:
             return JsonResponse({'error': f'Không tìm thấy class_id: {class_id}'}, status=404)
 
-        for field, value in report_data.items():
+        subjects = data.get('subjects', [])
+        computed_report_data = _computed_report_card_defaults(subjects)
+        merged_report_data = {
+            **computed_report_data,
+            **{
+                field: value
+                for field, value in report_data.items()
+                if value not in (None, '')
+            },
+        }
+
+        for field, value in merged_report_data.items():
             if field == 'class_id':
                 continue  # ✅ bỏ qua vì đã gán riêng ở dưới
             setattr(report_card, field, value)
@@ -260,7 +359,7 @@ def update_report_card(request):
         ReportCardSubject.objects.filter(report_card_id=str(report_card.id)).delete()
         ReportCardSubject.objects.create(
             report_card_id=str(report_card.id),
-            subjects=data.get('subjects', [])
+            subjects=subjects
         )
 
         return JsonResponse({'message': 'Cập nhật học bạ thành công'}, status=200)
@@ -440,34 +539,44 @@ def save_full_report_card(request):
         )
 
         # 2. Lưu ReportCard
-        class_uuid = data['report_card'].get('class_id', '')
+        report_data = data.get('report_card', {})
+        class_uuid = report_data.get('class_id', '')
         try:
             class_instance = Class.objects.get(id=class_uuid)
         except Class.DoesNotExist:
             return JsonResponse({'error': f'Class with id {class_uuid} not found'}, status=404)
+        subjects = data.get('subjects', [])
+        computed_report_data = _computed_report_card_defaults(subjects)
+
+        def report_value(field_name, default=''):
+            value = report_data.get(field_name)
+            if value not in (None, ''):
+                return value
+            return computed_report_data.get(field_name, default)
+
         report_card = ReportCard.objects.create(
             student_id=student_id,
             class_id=str(class_instance.id),
-            school_year=data['report_card'].get('school_year', ''),
-            conduct_year1_sem1=data['report_card'].get('conduct_year1_sem1', ''),
-            conduct_year1_sem2=data['report_card'].get('conduct_year1_sem2', ''),
-            conduct_year1_final=data['report_card'].get('conduct_year1_final', ''),
-            conduct_year2_sem1=data['report_card'].get('conduct_year2_sem1', ''),
-            conduct_year2_sem2=data['report_card'].get('conduct_year2_sem2', ''),
-            conduct_year2_final=data['report_card'].get('conduct_year2_final', ''),
-            conduct_year3_sem1=data['report_card'].get('conduct_year3_sem1', ''),
-            conduct_year3_sem2=data['report_card'].get('conduct_year3_sem2', ''),
-            conduct_year3_final=data['report_card'].get('conduct_year3_final', ''),
-            academic_perform_year1=data['report_card'].get('academic_perform_year1', ''),
-            academic_perform_year2=data['report_card'].get('academic_perform_year2', ''),
-            academic_perform_year3=data['report_card'].get('academic_perform_year3', ''),
-            gpa_avg_year1=data['report_card'].get('gpa_avg_year1', 0),
-            gpa_avg_year2=data['report_card'].get('gpa_avg_year2', 0),
-            gpa_avg_year3=data['report_card'].get('gpa_avg_year3', 0),
-            promotion_status=data['report_card'].get('promotion_status', ''),
-            teacher_comment=data['report_card'].get('teacher_comment', ''),
-            teacher_signed=data['report_card'].get('teacher_signed', False),
-            principal_signed=data['report_card'].get('principal_signed', False),
+            school_year=report_value('school_year', ''),
+            conduct_year1_sem1=report_value('conduct_year1_sem1', ''),
+            conduct_year1_sem2=report_value('conduct_year1_sem2', ''),
+            conduct_year1_final=report_value('conduct_year1_final', ''),
+            conduct_year2_sem1=report_value('conduct_year2_sem1', ''),
+            conduct_year2_sem2=report_value('conduct_year2_sem2', ''),
+            conduct_year2_final=report_value('conduct_year2_final', ''),
+            conduct_year3_sem1=report_value('conduct_year3_sem1', ''),
+            conduct_year3_sem2=report_value('conduct_year3_sem2', ''),
+            conduct_year3_final=report_value('conduct_year3_final', ''),
+            academic_perform_year1=report_value('academic_perform_year1', ''),
+            academic_perform_year2=report_value('academic_perform_year2', ''),
+            academic_perform_year3=report_value('academic_perform_year3', ''),
+            gpa_avg_year1=report_value('gpa_avg_year1', 0),
+            gpa_avg_year2=report_value('gpa_avg_year2', 0),
+            gpa_avg_year3=report_value('gpa_avg_year3', 0),
+            promotion_status=report_value('promotion_status', ''),
+            teacher_comment=report_value('teacher_comment', ''),
+            teacher_signed=report_data.get('teacher_signed', False),
+            principal_signed=report_data.get('principal_signed', False),
             user_id=user.uid
         )
         print("🟩 Tạo ReportCard thành công, id =", report_card.id)
@@ -475,7 +584,7 @@ def save_full_report_card(request):
         # 3. Lưu ReportCardSubject
         ReportCardSubject.objects.create(
             report_card_id=str(report_card.id),
-            subjects=data.get('subjects', [])
+            subjects=subjects
         )
 
 
