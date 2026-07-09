@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from apps.users.auth_tokens import create_access_token, create_refresh_token, decode_token
 from apps.users.firebase_auth import verify_id_token as verify_firebase_id_token
 from apps.users.models import User
+from apps.classroom.models import Class
 from config import settings
 
 # Configure logger
@@ -169,6 +170,7 @@ def _build_user_payload(user):
         "email": user.email,
         "phone": user.phone,
         "avatar": user.avatar,
+        "role": user.role or "user",
     }
 
 
@@ -177,6 +179,110 @@ def _issue_token_pair(user):
         "access_token": create_access_token(user),
         "refresh_token": create_refresh_token(user),
     }
+
+
+def _build_admin_user_payload(user):
+    return {
+        **_build_user_payload(user),
+        "created_at": user.created_at,
+        "last_sign_in_time": user.last_sign_in_time,
+    }
+
+
+def _get_authenticated_user(request):
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None, Response({"error": "Thiếu token hoặc định dạng Authorization không hợp lệ"}, status=401)
+
+    token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        return None, Response({"error": "Thiếu token"}, status=401)
+
+    try:
+        decoded_token = decode_token(token, expected_type="access")
+    except jwt.ExpiredSignatureError:
+        return None, Response({"error": "Token đã hết hạn"}, status=401)
+    except jwt.InvalidTokenError:
+        return None, Response({"error": "Token không hợp lệ"}, status=401)
+
+    try:
+        return User.objects.get(uid=decoded_token["user_id"]), None
+    except User.DoesNotExist:
+        return None, Response({"error": "Không tìm thấy người dùng"}, status=404)
+
+
+def _require_admin(request):
+    user, error_response = _get_authenticated_user(request)
+    if error_response is not None:
+        return None, error_response
+
+    if (user.role or "user") != "admin":
+        return None, Response({"error": "Bạn không có quyền quản trị"}, status=403)
+
+    return user, None
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def list_users(request):
+    admin_user, error_response = _require_admin(request)
+    if error_response is not None:
+        return error_response
+
+    search = (request.GET.get("search") or "").strip()
+    role = (request.GET.get("role") or "").strip()
+
+    users = User.objects
+    if role:
+        users = users.filter(role=role)
+
+    if search:
+        users = users.filter(
+            __raw__={
+                "$or": [
+                    {"full_name": {"$regex": search, "$options": "i"}},
+                    {"email": {"$regex": search, "$options": "i"}},
+                    {"phone": {"$regex": search, "$options": "i"}},
+                    {"uid": {"$regex": search, "$options": "i"}},
+                ]
+            }
+        )
+
+    data = [_build_admin_user_payload(user) for user in users.order_by("-created_at")]
+    return Response({"users": data, "total": len(data), "requested_by": admin_user.uid})
+
+
+@api_view(["DELETE"])
+@permission_classes([AllowAny])
+def delete_user(request):
+    admin_user, error_response = _require_admin(request)
+    if error_response is not None:
+        return error_response
+
+    target_uid = (request.GET.get("uid") or request.data.get("uid") or "").strip()
+    if not target_uid:
+        return Response({"error": "Thiếu uid người dùng cần xóa"}, status=400)
+
+    if target_uid == admin_user.uid:
+        return Response({"error": "Admin không thể tự xóa tài khoản đang đăng nhập"}, status=400)
+
+    try:
+        target_user = User.objects.get(uid=target_uid)
+    except User.DoesNotExist:
+        return Response({"error": "Không tìm thấy người dùng cần xóa"}, status=404)
+
+    managed_class_count = Class.objects.filter(teacher_id=target_uid).count()
+    if managed_class_count > 0:
+        return Response(
+            {
+                "error": "Không thể xóa người dùng đang quản lý lớp",
+                "class_count": managed_class_count,
+            },
+            status=409,
+        )
+
+    target_user.delete()
+    return Response({"message": "Xóa người dùng thành công", "uid": target_uid})
 
 @swagger_auto_schema(method='post', request_body=FORGOT_PASSWORD_SEND_OTP_BODY)
 @api_view(['POST'])
@@ -397,11 +503,7 @@ def facebook_login(request):
         return Response({
             "message": "Đăng nhập thành công",
             **token_pair,
-            "user": {
-                "uid": user.uid,
-                "full_name": user.full_name,
-                "avatar": user.avatar,
-            }
+            "user": _build_user_payload(user),
         }, status=200)
 
     except Exception as e:

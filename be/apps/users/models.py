@@ -12,10 +12,11 @@ class User(Document):
 	avatar = StringField()
 	password_hash = StringField(required=True)
 	fingerprint = StringField(max_length=500)
+	role = StringField(default="user")
 	created_at = IntField(default=lambda: int(datetime.now().timestamp()))
 	last_sign_in_time = IntField(default=lambda: int(datetime.now().timestamp()))
 
 	meta = {
 		"collection": "users",
-		"indexes": ["uid", "email", "phone"],
+		"indexes": ["uid", "email", "phone", "role"],
 	}
