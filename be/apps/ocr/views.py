@@ -61,7 +61,7 @@ def cleanup_cropped_dir(base_dir, max_age_minutes=15):
                     for file in os.listdir(folder_path):
                         os.remove(os.path.join(folder_path, file))
                     os.rmdir(folder_path)
-                    print(f"🧹 Đã xoá thư mục cũ: {folder_path}")
+                    print(f" Đã xoá thư mục cũ: {folder_path}")
                 except Exception as e:
                     print(f"⚠️ Không thể xoá {folder_path}: {e}")
 
@@ -319,7 +319,7 @@ def update_report_card(request):
 
         report_data = data.get('report_card', {})
         class_id = report_data.get('class_id')
-        print("🧪 class_id nhận từ frontend:", class_id)
+        print(" class_id nhận từ frontend:", class_id)
         if not class_id:
             return JsonResponse({'error': 'class_id không được để trống'}, status=400)
 
@@ -419,10 +419,10 @@ def get_full_report_card(request):
         student_data['conduct'] = report_card.conduct_year1_final or ''
 
         # 4. Lấy danh sách điểm môn học
-        print("🧪 Dạng string dùng để filter:", str(report_card.id))
+        print(" Dạng string dùng để filter:", str(report_card.id))
         subjects_entries = ReportCardSubject.objects.filter(report_card_id=str(report_card.id))
-        print("🔍 Số entries tìm được:", subjects_entries.count())
-        print("🧪 report_card id dùng để tìm:", str(report_card.id))
+        print(" Số entries tìm được:", subjects_entries.count())
+        print(" report_card id dùng để tìm:", str(report_card.id))
         year_map = {1: "10", 2: "11", 3: "12"}
         class_subjects = { "10": [], "11": [], "12": [] }
 
@@ -457,8 +457,8 @@ def get_full_report_card(request):
                     'subjects': subjects
                 })
         print("✅ Tổng số entry ReportCardSubject:", subjects_entries.count())
-        print("🔍 class_subjects build xong:", json.dumps(class_subjects, ensure_ascii=False))
-        print("📦 classList trả về:", json.dumps(class_list, ensure_ascii=False))
+        print(" class_subjects build xong:", json.dumps(class_subjects, ensure_ascii=False))
+        print(" classList trả về:", json.dumps(class_list, ensure_ascii=False))
 
         # 6. Trả dữ liệu
         return JsonResponse({
@@ -492,9 +492,9 @@ def save_full_report_card(request):
         print("🔵 Nhận request save_full_report_card")
 
         body_unicode = request.body.decode('utf-8')
-        print("📦 Payload raw nhận được:", body_unicode)
+        print(" Payload raw nhận được:", body_unicode)
         data = json.loads(request.body)
-        print("📋 Dữ liệu parse xong:", data)
+        print("Dữ liệu parse xong:", data)
   # 0. Lấy UID từ Authorization Header
         authorization_header = request.headers.get('Authorization')
         if not authorization_header:
@@ -621,25 +621,24 @@ def correct_text_with_bart(text):
 
 
 def run_ocr(crop_path):
-    """Run OCR in PaddleOCR-new compatible mode without forcing legacy kwargs."""
     started_at = time.perf_counter()
-    print(f"⏱️ [OCR] start: {crop_path}")
+    print(f"[OCR] start: {crop_path}")
     try:
         result = ocr_model.ocr(crop_path)
-        print(f"⏱️ [OCR] ocr() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
+        print(f"[OCR] ocr() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
         return result
     except Exception as e:
         print(f"⚠️ OCR default mode failed: {e}")
         try:
             result = ocr_model.predict(crop_path)
-            print(f"⏱️ [OCR] predict() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
+            print(f"[OCR] predict() done in {time.perf_counter() - started_at:.3f}s: {crop_path}")
             return result
         except Exception as e2:
             print(f"⚠️ OCR predict mode failed: {e2}")
-            print(f"⏱️ [OCR] failed after {time.perf_counter() - started_at:.3f}s: {crop_path}")
+            print(f"[OCR] failed after {time.perf_counter() - started_at:.3f}s: {crop_path}")
             return []
 
-
+# đưa về dạng legacy [[box, [text, score]], ...]. để extract_table_from_ocr_result_new_paddle() có thể xử lý
 def _normalize_ocr_lines(ocr_result):
     """Normalize OCR output to legacy shape: [[box, [text, score]], ...]."""
     if not ocr_result:
@@ -681,9 +680,12 @@ def detect(request):
     if 'image' not in request.FILES:
         return JsonResponse({'error': 'Missing image file'}, status=400)
 
+    # lấy loại ảnh
     image_type = request.POST.get('image_type', 'report_card')
+    print(f"detect image_type='{image_type}'")
+    # lấy model yolo
     model = yolo_model
-    print(f"📥 detect image_type='{image_type}'")
+    # tính thời gian pipeline
     pipeline_started_at = time.perf_counter()
     image_file = request.FILES['image']
     unique_filename = str(uuid.uuid4()) + ".jpg"
@@ -691,35 +693,35 @@ def detect(request):
     os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
     with open(temp_image_path, 'wb+') as f:
         f.write(image_file.read())
-    print(f"⏱️ [detect] saved temp image in {time.perf_counter() - pipeline_started_at:.3f}s: {temp_image_path}")
+    print(f"[detect] saved temp image in {time.perf_counter() - pipeline_started_at:.3f}s: {temp_image_path}")
 
     try:
+        #xóa ảnh cũ mỗi 15p
         cleanup_started_at = time.perf_counter()
         os.makedirs(CROPPED_ROOT_DIR, exist_ok=True)
         cleanup_cropped_dir(CROPPED_ROOT_DIR)
-        print(f"⏱️ [detect] cleanup_cropped_dir done in {time.perf_counter() - cleanup_started_at:.3f}s")
+        print(f"[detect] cleanup_cropped_dir done in {time.perf_counter() - cleanup_started_at:.3f}s")
 
+        #tạo thư mục cropped mới
         cropped_dir_started_at = time.perf_counter()
         cropped_dir = os.path.join(CROPPED_ROOT_DIR, uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
-        print(f"⏱️ [detect] create cropped dir done in {time.perf_counter() - cropped_dir_started_at:.3f}s: {cropped_dir}")
-
-        # Info pineline:
+        print(f"[detect] create cropped dir done in {time.perf_counter() - cropped_dir_started_at:.3f}s: {cropped_dir}")
         if image_type != 'report_card':
             info_started_at = time.perf_counter()
             info_filename = f"info_{uuid.uuid4().hex[:8]}.jpg"
             info_path = os.path.join(cropped_dir, info_filename)
             image_read_started_at = time.perf_counter()
             temp_image = cv2.imread(temp_image_path)
-            print(f"⏱️ [detect] cv2.imread(temp) done in {time.perf_counter() - image_read_started_at:.3f}s")
+            print(f"[detect] cv2.imread(temp) done in {time.perf_counter() - image_read_started_at:.3f}s")
 
             write_started_at = time.perf_counter()
             cv2.imwrite(info_path, temp_image)
-            print(f"⏱️ [detect] cv2.imwrite(info image) done in {time.perf_counter() - write_started_at:.3f}s: {info_path}")
+            print(f"[detect] cv2.imwrite(info image) done in {time.perf_counter() - write_started_at:.3f}s: {info_path}")
 
             gemini_started_at = time.perf_counter()
             info_data = extract_student_info_from_image(info_path)
-            print(f"⏱️ [detect] Gemini student info done in {time.perf_counter() - gemini_started_at:.3f}s")
+            print(f"[detect] Gemini student info done in {time.perf_counter() - gemini_started_at:.3f}s")
             print(f"✅ Gemini parsed student_info direct image: {json.dumps(info_data, ensure_ascii=False)}")
 
             response_data = [{
@@ -727,42 +729,48 @@ def detect(request):
                 "ocr_data": [],
                 "student_info": info_data
             }]
-            print(f"⏱️ [detect] total non-report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
+            print(f"[detect] total non-report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
             return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
 
+        # report_card flow
         yolo_started_at = time.perf_counter()
+        # Chạy model với ảnh tạm đã lưu
         results = model(temp_image_path)[0]
-        print(f"⏱️ [detect] YOLO inference done in {time.perf_counter() - yolo_started_at:.3f}s")
+        print(f"[detect] YOLO inference done in {time.perf_counter() - yolo_started_at:.3f}s")
 
         image_load_started_at = time.perf_counter()
         img = cv2.imread(temp_image_path)
-        print(f"⏱️ [detect] cv2.imread(report image) done in {time.perf_counter() - image_load_started_at:.3f}s")
+        print(f"[detect] cv2.imread(report image) done in {time.perf_counter() - image_load_started_at:.3f}s")
 
         response_data = []
+        #lấy danh sách boundingboxes từ kết quả YOLO
         boxes = results.boxes.xyxy.cpu().numpy()
-        print(f"⏱️ [detect] YOLO detected {len(boxes)} boxes")
+        print(f"[detect] YOLO detected {len(boxes)} boxes")
         for i, box in enumerate(boxes):
             crop_started_at = time.perf_counter()
+            #lấy tọa độ bounding box và cắt ảnh
             x1, y1, x2, y2 = map(int, box)
             crop = img[y1:y2, x1:x2]
             if crop.size == 0:
                 print(f"⚠️ Empty crop at index {i}, box={box}")
                 continue
 
+            #lưu ảnh crop vào thư mục cropped
             crop_filename = f"crop_{i}.jpg"
             crop_path = os.path.join(cropped_dir, crop_filename)
-
             write_crop_started_at = time.perf_counter()
             cv2.imwrite(crop_path, crop)
-            print(f"⏱️ [detect] crop {i} cv2.imwrite done in {time.perf_counter() - write_crop_started_at:.3f}s: {crop_path}")
+            print(f"[detect] crop {i} cv2.imwrite done in {time.perf_counter() - write_crop_started_at:.3f}s: {crop_path}")
 
+            #chạy OCR trên ảnh crop
             ocr_started_at = time.perf_counter()
             ocr_result = run_ocr(crop_path)
-            print(f"⏱️ [detect] crop {i} OCR wrapper finished in {time.perf_counter() - ocr_started_at:.3f}s")
+            print(f"[detect] crop {i} OCR wrapper finished in {time.perf_counter() - ocr_started_at:.3f}s")
 
+            #gom ocr thành bảng điểm
             parse_started_at = time.perf_counter()
             text_data = extract_table_from_ocr_result_new_paddle(ocr_result)
-            print(f"⏱️ [detect] crop {i} parse finished in {time.perf_counter() - parse_started_at:.3f}s")
+            print(f"[detect] crop {i} parse finished in {time.perf_counter() - parse_started_at:.3f}s")
             print(f"✅ OCR parsed report_card crop_{i}: {json.dumps(text_data, ensure_ascii=False)}")
             result_entry = {
                 "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
@@ -771,9 +779,9 @@ def detect(request):
             }
 
             response_data.append(result_entry)
-            print(f"⏱️ [detect] crop {i} total done in {time.perf_counter() - crop_started_at:.3f}s")
+            print(f"[detect] crop {i} total done in {time.perf_counter() - crop_started_at:.3f}s")
 
-        print(f"⏱️ [detect] total report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
+        print(f"[detect] total report_card pipeline done in {time.perf_counter() - pipeline_started_at:.3f}s")
         return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
 
     except Exception as e:
@@ -843,14 +851,15 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
     for line in ocr_lines:
         if not line or len(line) < 2:
             continue
-
+        #lấy box và text_info từ line
         box = line[0]
         text_info = line[1]
-
+        #nếu tồn tại box và text_info hợp lệ thì mới tiếp tục
         if box is None or not isinstance(text_info, (list, tuple)) or len(text_info) == 0:
             continue
 
         try:
+            # chuyển box thành mảng numpy và reshape thành (-1, 2) để lấy tọa độ x, y
             pts = np.array(box, dtype=np.float32).reshape(-1, 2)
         except Exception:
             continue
@@ -861,7 +870,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         text = normalize_text(text_info[0])
         if not text:
             continue
-
+        # tính toán tâm x, y và chiều cao của box
         x_center = float(pts[:, 0].mean())
         y_center = float(pts[:, 1].mean())
         height = float(pts[:, 1].max() - pts[:, 1].min())
@@ -872,9 +881,11 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         print("⚠️ bbox parser rows=0")
         return []
 
-    print(f"🧪 bbox parser rows: {len(rows)}")
+    print(f" bbox parser rows: {len(rows)}")
 
+    #sắp xếp các hàng theo trục y để chuẩn bị nhóm các hàng gần nhau
     rows.sort(key=lambda r: r[0])
+    # tính chiều cao trung bình của các hàng để xác định ngưỡng nhóm
     avg_height = np.mean([r[4] for r in rows]) if rows else 10
     if avg_height <= 0:
         avg_height = 10
@@ -884,6 +895,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
     current_group = []
 
     for r in rows:
+        # nếu current_group rỗng hoặc khoảng cách y giữa hàng hiện tại và hàng cuối cùng trong nhóm nhỏ hơn 0.72 lần chiều cao trung bình, thì thêm hàng vào nhóm hiện tại
         if not current_group or abs(r[0] - current_group[-1][0]) < avg_height * 0.72:
             current_group.append(r)
         else:
@@ -893,7 +905,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
     if current_group:
         grouped_rows.append(current_group)
 
-    print(f"🧪 bbox grouped rows: {len(grouped_rows)}")
+    print(f" bbox grouped rows: {len(grouped_rows)}")
 
     # ---- find header anchors from header row ----
     header_group = None
@@ -933,10 +945,10 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         else:
             hk1_x, hk2_x, cn_x = 360.0, 540.0, 710.0
 
-    print(f"🧪 column anchors: hk1_x={hk1_x}, hk2_x={hk2_x}, cn_x={cn_x}")
+    print(f" column anchors: hk1_x={hk1_x}, hk2_x={hk2_x}, cn_x={cn_x}")
 
     extracted = []
-
+    # gán các hàng đã nhóm vào các cột dựa trên vị trí x của chúng
     for group in grouped_rows:
         group = sorted(group, key=lambda r: r[1])
         raw_texts = [normalize_text(item[2]) for item in group if normalize_text(item[2])]
@@ -950,6 +962,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
             continue
 
         # ---- summary row ----
+        # nếu dòng có chứa "dtb" hoặc "đtb" hoặc "các môn", thì coi là dòng tổng kết điểm trung bình các môn
         if "dtb" in raw_join or "đtb" in raw_join or "các môn" in raw_join or "cac mon" in raw_join:
             score_tokens = [score_value(t) for t in raw_texts if is_score_token(t)]
             extracted.append({
@@ -963,7 +976,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         # ---- parse normal row ----
         text_tokens = []
         score_candidates = []
-
+        # 
         for item in group:
             x = item[1]
             text = normalize_text(item[2])
@@ -1013,9 +1026,9 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
 
         # Apply BART correction to subject name
         bart_started_at = time.perf_counter()
-        print(f"⏱️ [parse] BART start: {subject_name}")
+        print(f"[parse] BART start: {subject_name}")
         subject_name = correct_text_with_bart(subject_name)
-        print(f"⏱️ [parse] BART done in {time.perf_counter() - bart_started_at:.3f}s: {subject_name}")
+        print(f"[parse] BART done in {time.perf_counter() - bart_started_at:.3f}s: {subject_name}")
 
         if not subject_name:
             continue
@@ -1031,7 +1044,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
         hk1_val = ""
         hk2_val = ""
         cn_val = ""
-
+        # gán điểm theo thứ tự ưu tiên: HK1, HK2, CN
         if len(ordered_scores) >= 3 and all(s == "Dat" for s in ordered_scores[:3]):
             hk1_val, hk2_val, cn_val = "Dat", "Dat", "Dat"
         elif len(ordered_scores) >= 3:
@@ -1134,7 +1147,7 @@ def extract_student_info_from_base64(base64_image):
         ])
 
         output_text = response.text.strip()
-        print("📄 Gemini raw response:", output_text)
+        print("Gemini raw response:", output_text)
 
         # Loại bỏ ```json hoặc ``` nếu tồn tại
         if output_text.startswith("```json"):

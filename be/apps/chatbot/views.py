@@ -68,7 +68,7 @@ def clean_temp_files(folder_path=TEMP_DIR, expire_seconds= 24 * 60 * 60):
                     print(f"❌ Lỗi khi xóa file {filename}: {e}")
 
     if deleted > 0:
-        print(f"🧹 Đã xóa {deleted} file cũ trong {folder_path}")
+        print(f" Đã xóa {deleted} file cũ trong {folder_path}")
 
 
 def _map_subject_years_for_chatbot(student_list):
@@ -195,7 +195,7 @@ def ask_chatbot(request):
                         f.write(json.dumps(student, ensure_ascii=False, indent=2) + "\n\n")
                 print("✅ File đã ghi vào:", txt_file_path)
             else:
-                print("📂 Dùng lại file txt:", txt_file_path)
+                print("Dùng lại file txt:", txt_file_path)
 
             # ✅ Upload lên Dify
             with open(txt_file_path, "rb") as f:
@@ -209,8 +209,8 @@ def ask_chatbot(request):
                     files=multipart_data
                 )
 
-            print("🧾 upload_resp.status_code:", upload_resp.status_code)
-            print("🧾 upload_resp.text:", upload_resp.text)
+            print("upload_resp.status_code:", upload_resp.status_code)
+            print("upload_resp.text:", upload_resp.text)
 
             if upload_resp.status_code not in [200, 201]:
                 return JsonResponse({
