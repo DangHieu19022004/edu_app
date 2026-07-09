@@ -351,7 +351,7 @@ def update_report_card(request):
 
         # 2. Cập nhật thông tin sinh viên
         student_data = data.get('student', {})
-        student_id = student_data.get('id')
+        student_id = student_data.get('id') or report_card.student_id
         student_defaults = {k: v for k, v in student_data.items() if k != 'id'}
         _upsert_student_info(student_id, student_defaults)
 

@@ -5,9 +5,13 @@ import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/ocr_models.dart';
 import 'package:edu_app_flutter/views/screens/ocr_screen.dart';
+import 'package:edu_app_flutter/views/widgets/app_notice_modal.dart';
 import 'package:edu_app_flutter/views/widgets/ocr/ocr_flow_header.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdfx/pdfx.dart';
 
 class PreOcrScreen extends StatefulWidget {
   const PreOcrScreen({super.key});
@@ -20,6 +24,8 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedImages = [];
   final List<OcrImageRole> _selectedRoles = [];
+  String? _selectedPdfPath;
+  String? _selectedPdfName;
   bool _isPicking = false;
 
   static const List<OcrImageRole> _roleOptions = <OcrImageRole>[
@@ -34,6 +40,8 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
       final images = await _picker.pickMultiImage(imageQuality: 92);
       if (images.isEmpty || !mounted) return;
       setState(() {
+        _selectedPdfPath = null;
+        _selectedPdfName = null;
         _selectedImages
           ..clear()
           ..addAll(images);
@@ -57,11 +65,78 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
       );
       if (image == null || !mounted) return;
       setState(() {
+        _selectedPdfPath = null;
+        _selectedPdfName = null;
         final nextIndex = _selectedImages.length;
         _selectedImages.add(image);
         _selectedRoles.add(_defaultRoleForIndex(nextIndex));
       });
     });
+  }
+
+  Future<void> _pickFromPdf() async {
+    await _runPicker(() async {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+        allowMultiple: false,
+        withData: false,
+      );
+
+      final pdfPath = result?.files.single.path;
+      if (pdfPath == null || pdfPath.trim().isEmpty || !mounted) return;
+
+      setState(() {
+        _selectedImages.clear();
+        _selectedRoles.clear();
+        _selectedPdfPath = pdfPath;
+        _selectedPdfName =
+            result?.files.single.name ?? pdfPath.split(Platform.pathSeparator).last;
+      });
+    });
+  }
+
+  Future<List<XFile>> _renderPdfPagesToImages(String pdfPath) async {
+    final document = await PdfDocument.openFile(pdfPath);
+    final tempDir = await getTemporaryDirectory();
+    final outputDir = Directory(
+      '${tempDir.path}${Platform.pathSeparator}edu_app_pdf_ocr_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    await outputDir.create(recursive: true);
+
+    final pageCount = document.pagesCount < _roleOptions.length
+        ? document.pagesCount
+        : _roleOptions.length;
+    final renderedImages = <XFile>[];
+
+    try {
+      for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+        final page = await document.getPage(pageNumber);
+        try {
+          final width = page.width * 2;
+          final height = page.height * 2;
+          final pageImage = await page.render(
+            width: width,
+            height: height,
+            format: PdfPageImageFormat.png,
+          );
+
+          if (pageImage == null) continue;
+
+          final imageFile = File(
+            '${outputDir.path}${Platform.pathSeparator}page_$pageNumber.png',
+          );
+          await imageFile.writeAsBytes(pageImage.bytes, flush: true);
+          renderedImages.add(XFile(imageFile.path));
+        } finally {
+          await page.close();
+        }
+      }
+    } finally {
+      await document.close();
+    }
+
+    return renderedImages;
   }
 
   Future<void> _replaceImage(int index, ImageSource source) async {
@@ -86,11 +161,15 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
     }
   }
 
-  void _confirmSelection() {
-    if (_selectedImages.isEmpty) return;
-    final sortedInputs = _buildSortedImageInputs();
+  Future<void> _confirmSelection() async {
+    if (_selectedImages.isEmpty && _selectedPdfPath == null) return;
+
+    final sortedInputs = _selectedPdfPath == null
+        ? _buildSortedImageInputs()
+        : await _buildInputsFromSelectedPdf();
     if (sortedInputs.isEmpty) return;
 
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => OcrScreen(
@@ -98,6 +177,50 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
         ),
       ),
     );
+  }
+
+  Future<List<OcrDetectImageInput>> _buildInputsFromSelectedPdf() async {
+    final pdfPath = _selectedPdfPath;
+    if (pdfPath == null || pdfPath.trim().isEmpty) {
+      return const <OcrDetectImageInput>[];
+    }
+
+    setState(() => _isPicking = true);
+    try {
+      final renderedImages = await _renderPdfPagesToImages(pdfPath);
+      if (renderedImages.length < _roleOptions.length) {
+        if (mounted) {
+          await AppNoticeModal.showError(
+            context,
+            title: 'PDF chưa đủ trang',
+            message:
+                'PDF cần đủ 4 trang theo thứ tự: thông tin chung, lớp 10, lớp 11, lớp 12.',
+          );
+        }
+        return const <OcrDetectImageInput>[];
+      }
+
+      return List<OcrDetectImageInput>.generate(
+        _roleOptions.length,
+        (index) => OcrDetectImageInput(
+          path: renderedImages[index].path,
+          role: _defaultRoleForIndex(index),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        await AppNoticeModal.showError(
+          context,
+          title: 'Không đọc được PDF',
+          message: 'Không thể chuyển PDF thành ảnh. Vui lòng thử file khác.',
+        );
+      }
+      return const <OcrDetectImageInput>[];
+    } finally {
+      if (mounted) {
+        setState(() => _isPicking = false);
+      }
+    }
   }
 
   Future<void> _openImagePreview(XFile file, int index) async {
@@ -237,9 +360,11 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _selectedImages.isEmpty
+                    _selectedImages.isEmpty && _selectedPdfPath == null
                         ? _buildEmptyState()
-                        : _buildImagePreviewList(),
+                        : _selectedPdfPath != null
+                            ? _buildPdfSelectedCard()
+                            : _buildImagePreviewList(),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -259,7 +384,8 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
                           ],
                         ),
                         child: TextButton(
-                          onPressed: _selectedImages.isEmpty
+                          onPressed: _selectedImages.isEmpty &&
+                                  _selectedPdfPath == null
                               ? null
                               : _confirmSelection,
                           style: TextButton.styleFrom(
@@ -297,30 +423,47 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
   }
 
   Widget _buildOptionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 116,
-            child: _ActionCardButton(
-              icon: Icons.photo_library_rounded,
-              title: AppTexts.preOcrChooseFromDevice,
-              onTap: _pickFromDevice,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 520;
+        final itemWidth = isNarrow
+            ? (constraints.maxWidth - 10) / 2
+            : (constraints.maxWidth - 20) / 3;
+
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              height: 116,
+              child: _ActionCardButton(
+                icon: Icons.photo_library_rounded,
+                title: AppTexts.preOcrChooseFromDevice,
+                onTap: _pickFromDevice,
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: SizedBox(
-            height: 116,
-            child: _ActionCardButton(
-              icon: Icons.camera_alt_rounded,
-              title: AppTexts.preOcrCaptureByCamera,
-              onTap: _captureByCamera,
+            SizedBox(
+              width: itemWidth,
+              height: 116,
+              child: _ActionCardButton(
+                icon: Icons.camera_alt_rounded,
+                title: AppTexts.preOcrCaptureByCamera,
+                onTap: _captureByCamera,
+              ),
             ),
-          ),
-        ),
-      ],
+            SizedBox(
+              width: itemWidth,
+              height: 116,
+              child: _ActionCardButton(
+                icon: Icons.picture_as_pdf_rounded,
+                title: 'Nhập bằng PDF',
+                onTap: _pickFromPdf,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -397,6 +540,89 @@ class _PreOcrScreenState extends State<PreOcrScreen> {
           fontWeight: FontWeight.w500,
           height: 1.35,
         ),
+      ),
+    );
+  }
+
+  Widget _buildPdfSelectedCard() {
+    final fileName = _selectedPdfName ?? 'hoc_ba.pdf';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE8E8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.picture_as_pdf_rounded,
+              color: Color(0xFFDC2626),
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fileName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: AppFontSizes.dashboardBody,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.title,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'PDF sẽ được tách 4 trang khi bấm xác nhận.',
+                  style: TextStyle(
+                    fontSize: AppFontSizes.dashboardCaption,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.subtitle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _TinyActionButton(
+            icon: Icons.folder_open_rounded,
+            tooltip: 'Chọn PDF khác',
+            onTap: _pickFromPdf,
+          ),
+          const SizedBox(width: 6),
+          _TinyActionButton(
+            icon: Icons.delete_outline_rounded,
+            tooltip: 'Xóa PDF',
+            isDanger: true,
+            onTap: () {
+              setState(() {
+                _selectedPdfPath = null;
+                _selectedPdfName = null;
+              });
+            },
+          ),
+        ],
       ),
     );
   }

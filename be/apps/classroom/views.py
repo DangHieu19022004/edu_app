@@ -45,8 +45,17 @@ def delete_classroom(request):
         if class_instance.teacher_id != uid:
             return JsonResponse({'error': 'Bạn không có quyền xoá lớp này'}, status=403)
 
-        report_cards = ReportCard.objects.filter(class_id=class_id)
+        report_cards = list(ReportCard.objects.filter(class_id=class_id))
         student_ids = [rc.student_id for rc in report_cards]
+
+        if student_ids:
+            return JsonResponse(
+                {
+                    'error': 'Không thể xóa lớp đang có học sinh',
+                    'student_count': len(set(student_ids)),
+                },
+                status=409,
+            )
 
         # 1. Xoá ReportCardSubject trước
         for rc in report_cards:
@@ -55,12 +64,12 @@ def delete_classroom(request):
             print(f"🗑️ Deleted ReportCardSubject for report_card_id={report_card_id}: {deleted}")
 
         # 2. Xoá ReportCard tiếp theo
-        deleted_rc = report_cards.delete()
+        deleted_rc = ReportCard.objects.filter(class_id=class_id).delete()
         print(f"🗑️ Deleted ReportCards: {deleted_rc}")
 
         # 3. Xoá StudentInfo nếu không còn report card nào khác
         for student_id in student_ids:
-            if not ReportCard.objects.filter(student_id=student_id).exists():
+            if ReportCard.objects.filter(student_id=student_id).first() is None:
                 deleted_st = StudentInfo.objects.filter(student_id=student_id).delete()
                 print(f"🗑️ Deleted StudentInfo for student_id={student_id}: {deleted_st}")
 

@@ -494,6 +494,10 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
           studentId: data.student.id.trim().isEmpty
               ? widget.studentId
               : data.student.id,
+          studentName: _nameController.text.trim(),
+          studentDob: _dobController.text.trim(),
+          studentGender: _genderController.text.trim(),
+          studentPhone: _phoneController.text.trim(),
           classId: classId,
           subjects: subjects,
         ),

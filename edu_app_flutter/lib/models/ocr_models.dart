@@ -234,17 +234,32 @@ class OcrSaveFullReportCardResponse {
 class OcrUpdateReportCardRequest {
   const OcrUpdateReportCardRequest({
     required this.studentId,
+    required this.studentName,
+    required this.studentDob,
+    required this.studentGender,
+    required this.studentPhone,
     required this.classId,
     required this.subjects,
   });
 
   final String studentId;
+  final String studentName;
+  final String studentDob;
+  final String studentGender;
+  final String studentPhone;
   final String classId;
   final List<OcrUpdateSubjectItem> subjects;
 
   Map<String, dynamic> toJson() {
     return {
-      'student': {'id': studentId},
+      'student': {
+        'id': studentId,
+        'name': studentName,
+        'dob': studentDob,
+        'gender': studentGender,
+        'phone': studentPhone,
+        'class_id': classId,
+      },
       'report_card': {'class_id': classId},
       'subjects': subjects.map((item) => item.toJson()).toList(),
     };

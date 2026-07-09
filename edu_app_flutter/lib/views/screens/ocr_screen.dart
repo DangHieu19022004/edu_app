@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:edu_app_flutter/constants/app_colors.dart';
+import 'package:edu_app_flutter/constants/api_config.dart';
 import 'package:edu_app_flutter/constants/app_texts.dart';
 import 'package:edu_app_flutter/constants/app_ui.dart';
 import 'package:edu_app_flutter/models/classroom_models.dart';
@@ -48,6 +49,7 @@ class _OcrScreenState extends State<OcrScreen>
     11: const <OcrScoreRow>[],
     12: const <OcrScoreRow>[],
   };
+  final Map<int, String> _cropImageUrlByGrade = <int, String>{};
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
@@ -102,6 +104,7 @@ class _OcrScreenState extends State<OcrScreen>
     setState(() {
       _isDetecting = true;
       _detectError = null;
+      _cropImageUrlByGrade.clear();
     });
     _syncScanAnimation();
 
@@ -201,22 +204,35 @@ class _OcrScreenState extends State<OcrScreen>
       11: const <OcrScoreRow>[],
       12: const <OcrScoreRow>[],
     };
+    final nextCropUrls = <int, String>{};
 
     for (final item in results) {
       if (item.role == OcrImageRole.grade10) {
         next[10] = List<OcrScoreRow>.from(item.scores);
+        if (item.imageUrl.trim().isNotEmpty) {
+          nextCropUrls[10] = item.imageUrl.trim();
+        }
       }
       if (item.role == OcrImageRole.grade11) {
         next[11] = List<OcrScoreRow>.from(item.scores);
+        if (item.imageUrl.trim().isNotEmpty) {
+          nextCropUrls[11] = item.imageUrl.trim();
+        }
       }
       if (item.role == OcrImageRole.grade12) {
         next[12] = List<OcrScoreRow>.from(item.scores);
+        if (item.imageUrl.trim().isNotEmpty) {
+          nextCropUrls[12] = item.imageUrl.trim();
+        }
       }
     }
 
     _scoresByGrade
       ..clear()
       ..addAll(next);
+    _cropImageUrlByGrade
+      ..clear()
+      ..addAll(nextCropUrls);
   }
 
   void _updateScoresForSelectedGrade(List<OcrScoreRow> rows) {
@@ -321,6 +337,125 @@ class _OcrScreenState extends State<OcrScreen>
   String _resolveStudentId() {
     _studentId ??= _generateStudentId();
     return _studentId!;
+  }
+
+  String _resolveCropImageUrl(String imageUrl) {
+    final trimmed = imageUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return '${ApiConfig.baseUrl}$trimmed';
+    }
+    return '${ApiConfig.baseUrl}/$trimmed';
+  }
+
+  Future<void> _showCropImageDialog(int grade) async {
+    final imageUrl = _cropImageUrlByGrade[grade]?.trim();
+    if (imageUrl == null || imageUrl.isEmpty) {
+      await AppNoticeModal.showError(
+        context,
+        title: 'Chưa có ảnh đối chiếu',
+        message: 'Không tìm thấy ảnh crop của lớp $grade trong kết quả OCR.',
+      );
+      return;
+    }
+
+    final resolvedUrl = _resolveCropImageUrl(imageUrl);
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+          backgroundColor: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEFF4FF),
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFDCE5F4)),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Ảnh crop lớp $grade',
+                          style: const TextStyle(
+                            fontSize: AppFontSizes.dashboardBody,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.title,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Đóng',
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.72,
+                    ),
+                    color: const Color(0xFFF8FAFF),
+                    child: InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 4,
+                      child: Image.network(
+                        resolvedUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const SizedBox(
+                            height: 360,
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return SizedBox(
+                            height: 260,
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Text(
+                                  'Không tải được ảnh crop.\n$resolvedUrl',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: AppFontSizes.dashboardCaption,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFB42318),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _saveReportCard() async {
@@ -881,6 +1016,9 @@ class _OcrScreenState extends State<OcrScreen>
   }
 
   Widget _buildScoresCard() {
+    final cropImageUrl = _cropImageUrlByGrade[_selectedGrade]?.trim();
+    final hasCropImage = cropImageUrl != null && cropImageUrl.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
@@ -891,6 +1029,39 @@ class _OcrScreenState extends State<OcrScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Bảng điểm lớp $_selectedGrade',
+                  style: const TextStyle(
+                    fontSize: AppFontSizes.dashboardBody,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.title,
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: hasCropImage
+                    ? () => _showCropImageDialog(_selectedGrade)
+                    : null,
+                icon: const Icon(Icons.image_search_rounded, size: 18),
+                label: const Text('Kiểm tra lại điểm'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  disabledForegroundColor: AppColors.subtitle,
+                  side: BorderSide(
+                    color: hasCropImage
+                        ? AppColors.primary
+                        : const Color(0xFFD6DFEE),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 14),
           if ((_scoresByGrade[_selectedGrade] ?? const <OcrScoreRow>[]).isEmpty)
             const Text(
