@@ -26,7 +26,7 @@ def delete_classroom(request):
         ReportCard, ReportCardSubject, StudentInfo = _get_ocr_models()
 
         class_id = request.GET.get("id")
-        print(f"🧪 DELETE request class_id = {class_id}")
+        print(f" DELETE request class_id = {class_id}")
         if not class_id:
             return JsonResponse({'error': 'Thiếu class_id'}, status=400)
 
@@ -52,21 +52,21 @@ def delete_classroom(request):
         for rc in report_cards:
             report_card_id = str(rc.id)
             deleted = ReportCardSubject.objects.filter(report_card_id=report_card_id).delete()
-            print(f"🗑️ Deleted ReportCardSubject for report_card_id={report_card_id}: {deleted}")
+            print(f" Deleted ReportCardSubject for report_card_id={report_card_id}: {deleted}")
 
         # 2. Xoá ReportCard tiếp theo
         deleted_rc = report_cards.delete()
-        print(f"🗑️ Deleted ReportCards: {deleted_rc}")
+        print(f" Deleted ReportCards: {deleted_rc}")
 
         # 3. Xoá StudentInfo nếu không còn report card nào khác
         for student_id in student_ids:
             if not ReportCard.objects.filter(student_id=student_id).exists():
                 deleted_st = StudentInfo.objects.filter(student_id=student_id).delete()
-                print(f"🗑️ Deleted StudentInfo for student_id={student_id}: {deleted_st}")
+                print(f" Deleted StudentInfo for student_id={student_id}: {deleted_st}")
 
         # 4. Xoá class cuối cùng
         deleted_class = class_instance.delete()
-        print(f"🗑️ Deleted Class: {deleted_class}")
+        print(f" Deleted Class: {deleted_class}")
 
         return JsonResponse({'message': 'Xoá lớp và toàn bộ học sinh liên quan thành công'}, status=200)
 
