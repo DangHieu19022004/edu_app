@@ -47,7 +47,7 @@ def delete_classroom(request):
         if class_instance.teacher_id != uid:
             return JsonResponse({'error': 'Bạn không có quyền xoá lớp này'}, status=403)
 
-        report_cards = list(ReportCard.objects.filter(class_id=class_id))
+        report_cards = ReportCard.objects.filter(class_id=class_id)
         student_ids = [rc.student_id for rc in report_cards]
 
         if student_ids:
@@ -66,7 +66,7 @@ def delete_classroom(request):
             print(f" Deleted ReportCardSubject for report_card_id={report_card_id}: {deleted}")
 
         # 2. Xoá ReportCard tiếp theo
-        deleted_rc = report_cards.delete()
+        deleted_rc = ReportCard.objects.filter(class_id=class_id).delete()
         print(f" Deleted ReportCards: {deleted_rc}")
 
         # 3. Xoá StudentInfo nếu không còn report card nào khác

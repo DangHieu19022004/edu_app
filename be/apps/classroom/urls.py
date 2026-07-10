@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import save_classroom, get_classroom, get_classrooms, delete_classroom, update_classroom, get_students_by_class, delete_classroom
+from .views import save_classroom, get_classroom, get_classrooms, delete_classroom, update_classroom, get_students_by_class
 
 urlpatterns = [
     path("save_classroom/", save_classroom, name="save_classroom"),
