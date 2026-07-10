@@ -44,7 +44,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("models/gemini-2.5-flash")
+gemini_model = genai.GenerativeModel("models/gemini-flash-lite-latest")
 
 CROPPED_ROOT_DIR = os.path.join(settings.MEDIA_ROOT, "cropped")
 
@@ -817,7 +817,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
             pass
 
         low = s.lower()
-        if low in {"dat", "đạt", "dt", "dạt", "đt"}:
+        if low in {"dat", "đạt", "dt", "dạt", "đt", ""}:
             return True
 
         return False
@@ -825,7 +825,7 @@ def extract_table_from_ocr_result_new_paddle(ocr_result):
     def score_value(s: str) -> str:
         s = normalize_text(s).replace(",", ".")
         low = s.lower()
-        if low in {"dat", "đạt", "dt", "dạt", "đt"}:
+        if low in {"dat", "đạt", "dt", "dạt", "đt", ""}:
             return "Dat"
         return s
 
