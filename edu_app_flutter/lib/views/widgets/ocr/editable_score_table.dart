@@ -102,12 +102,13 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
         color: const Color(0xFFEFF4FF),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          _HeaderCell(label: 'Tên môn', flex: 4),
-          _HeaderCell(label: 'HK I', flex: 2),
-          _HeaderCell(label: 'HK II', flex: 2),
-          _HeaderCell(label: 'Cả năm', flex: 2),
+          const _HeaderCell(label: 'Tên môn', flex: 4),
+          const _HeaderCell(label: 'HK I', flex: 2),
+          const _HeaderCell(label: 'HK II', flex: 2),
+          const _HeaderCell(label: 'Cả năm', flex: 2),
+          if (!widget.readOnly) const SizedBox(width: 16),
         ],
       ),
     );
@@ -162,6 +163,10 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
                 _updateRow(index, current.copyWith(caNam: value));
               },
             ),
+            if (!widget.readOnly)
+              _ClearRowButton(
+                onPressed: () => _clearRow(index),
+              ),
           ],
         ),
       ),
@@ -176,6 +181,13 @@ class _EditableScoreTableState extends State<EditableScoreTable> {
       _rows[index] = next;
     });
     widget.onChanged?.call(List<OcrScoreRow>.from(_rows));
+  }
+
+  void _clearRow(int index) {
+    _updateRow(
+      index,
+      const OcrScoreRow(subject: '', hk1: '', hk2: '', caNam: ''),
+    );
   }
 
   void _addEmptyRow() {
@@ -259,7 +271,30 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-class _EditableCell extends StatelessWidget {
+class _ClearRowButton extends StatelessWidget {
+  const _ClearRowButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 16,
+      height: 16,
+      child: IconButton(
+        tooltip: 'Clear row',
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+        icon: const Icon(Icons.close_rounded, size: 18),
+        color: const Color(0xFFB42318),
+        splashRadius: 18,
+      ),
+    );
+  }
+}
+
+class _EditableCell extends StatefulWidget {
   const _EditableCell({
     required this.flex,
     required this.initialValue,
@@ -273,10 +308,43 @@ class _EditableCell extends StatelessWidget {
   final bool readOnly;
 
   @override
+  State<_EditableCell> createState() => _EditableCellState();
+}
+
+class _EditableCellState extends State<_EditableCell> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditableCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.initialValue,
+        selection: TextSelection.collapsed(offset: widget.initialValue.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (readOnly) {
+    if (widget.readOnly) {
       return Expanded(
-        flex: flex,
+        flex: widget.flex,
         child: Padding(
           padding: const EdgeInsets.only(right: 8),
           child: Container(
@@ -289,7 +357,7 @@ class _EditableCell extends StatelessWidget {
               ),
             ),
             child: Text(
-              initialValue,
+              widget.initialValue,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -304,13 +372,13 @@ class _EditableCell extends StatelessWidget {
     }
 
     return Expanded(
-      flex: flex,
+      flex: widget.flex,
       child: Padding(
         padding: const EdgeInsets.only(right: 8),
         child: TextFormField(
-          key: ValueKey('$flex-$initialValue'),
-          initialValue: initialValue,
-          onChanged: onChanged,
+          controller: _controller,
+          focusNode: _focusNode,
+          onChanged: widget.onChanged,
           maxLines: null,
           minLines: 1,
           expands: false,

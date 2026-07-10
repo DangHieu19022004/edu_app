@@ -328,7 +328,13 @@ def update_report_card(request):
         except Class.DoesNotExist:
             return JsonResponse({'error': f'Không tìm thấy class_id: {class_id}'}, status=404)
 
-        subjects = data.get('subjects', [])
+        raw_subjects = data.get('subjects', [])
+        subjects = [
+            subject
+            for subject in raw_subjects
+            if isinstance(subject, dict)
+            and str(subject.get('name', '') or '').strip()
+        ]
         computed_report_data = _computed_report_card_defaults(subjects)
         merged_report_data = {
             **computed_report_data,

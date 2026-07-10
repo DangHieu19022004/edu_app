@@ -211,10 +211,6 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     _editableRowsByGrade[_selectedGrade] = rows;
   }
 
-  String _normalizeSubjectKey(String subject) {
-    return _sanitizeSubjectName(subject).toLowerCase();
-  }
-
   String _sanitizeSubjectName(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
@@ -222,20 +218,6 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     }
     final parts = trimmed.split(':');
     return parts.first.trim();
-  }
-
-  int? _yearFromClassLabel(String classLabel) {
-    final label = classLabel.toLowerCase();
-    if (label.contains('10')) {
-      return 1;
-    }
-    if (label.contains('11')) {
-      return 2;
-    }
-    if (label.trim().isNotEmpty) {
-      return 3;
-    }
-    return null;
   }
 
   String _removeVietnameseMarks(String value) {
@@ -334,76 +316,13 @@ class _DetailHbaScreenState extends State<DetailHbaScreen> {
     return trimmed;
   }
 
-  Map<int, Map<String, OcrScoreRow>> _buildRowsByGradeFromExistingSubjects() {
-    final rowsByGrade = <int, Map<String, OcrScoreRow>>{
-      10: <String, OcrScoreRow>{},
-      11: <String, OcrScoreRow>{},
-      12: <String, OcrScoreRow>{},
-    };
-
-    final data = _data;
-    if (data == null) {
-      return rowsByGrade;
-    }
-
-    for (final classGroup in data.classList) {
-      final grade = int.tryParse(classGroup.className.trim());
-      final safeGrade = grade ?? (9 + (_yearFromClassLabel(classGroup.className) ?? 0));
-      if (!rowsByGrade.containsKey(safeGrade)) {
-        continue;
-      }
-      final gradeRows = rowsByGrade[safeGrade]!;
-
-      for (final subject in classGroup.subjects) {
-        final name = _sanitizeSubjectName(subject.name);
-        if (name.isEmpty) {
-          continue;
-        }
-
-        final key = _normalizeSubjectKey(name);
-        gradeRows[key] = OcrScoreRow(
-          subject: name,
-          hk1: _normalizeScoreForPayload(subject.hk1),
-          hk2: _normalizeScoreForPayload(subject.hk2),
-          caNam: _normalizeScoreForPayload(subject.cn),
-        );
-      }
-    }
-
-    return rowsByGrade;
-  }
-
-  void _overlayEditedRowsOnRowsByGrade(Map<int, Map<String, OcrScoreRow>> rowsByGrade) {
-    for (final grade in <int>[10, 11, 12]) {
-      final gradeRows = rowsByGrade.putIfAbsent(grade, () => <String, OcrScoreRow>{});
-      final rows = _editableRowsByGrade[grade] ?? const <OcrScoreRow>[];
-      for (final row in rows) {
-        final subjectName = _sanitizeSubjectName(row.subject);
-        if (subjectName.isEmpty) {
-          continue;
-        }
-
-        final key = _normalizeSubjectKey(subjectName);
-        gradeRows[key] = OcrScoreRow(
-          subject: subjectName,
-          hk1: _normalizeScoreForPayload(row.hk1),
-          hk2: _normalizeScoreForPayload(row.hk2),
-          caNam: _normalizeScoreForPayload(row.caNam),
-        );
-      }
-    }
-  }
-
   List<OcrUpdateSubjectItem> _buildSubjectsForUpdate() {
-    final rowsByGrade = _buildRowsByGradeFromExistingSubjects();
-    _overlayEditedRowsOnRowsByGrade(rowsByGrade);
-
     final items = <OcrUpdateSubjectItem>[];
     const yearByGrade = <int, int>{10: 1, 11: 2, 12: 3};
 
     for (final grade in <int>[10, 11, 12]) {
       final year = yearByGrade[grade]!;
-      final rows = rowsByGrade[grade]?.values.toList() ?? const <OcrScoreRow>[];
+      final rows = _editableRowsByGrade[grade] ?? const <OcrScoreRow>[];
       for (final row in rows) {
         final subjectName = _sanitizeSubjectName(row.subject);
         if (subjectName.isEmpty) {
